@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { TextField } from '@form-builder/shared';
 import { useEditorStore } from '../stores/editor.ts';
@@ -17,7 +17,33 @@ function seedFromRoute(): void {
   store.initializeTemplate(id);
 }
 
-onMounted(seedFromRoute);
+// Cmd+Z / Ctrl+Z → undo, Cmd+Shift+Z / Ctrl+Shift+Z → redo.
+// The listener sits on `window` (not scoped to any input) so it fires wherever
+// focus is, matching the shortcut a form creator already expects from every
+// desktop editor.
+function onKeydown(event: KeyboardEvent): void {
+  const mod = event.metaKey || event.ctrlKey;
+  if (!mod) return;
+  const key = event.key.toLowerCase();
+  if (key !== 'z') return;
+  event.preventDefault();
+  // Flush any in-flight typing coalesce so the undo sees the current state,
+  // not a stale one waiting for the 500ms pause.
+  store.flushCoalesce();
+  if (event.shiftKey) {
+    store.redo();
+  } else {
+    store.undo();
+  }
+}
+
+onMounted(() => {
+  seedFromRoute();
+  window.addEventListener('keydown', onKeydown);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown);
+});
 watch(() => route.params.id, seedFromRoute);
 </script>
 
@@ -29,6 +55,7 @@ watch(() => route.params.id, seedFromRoute);
         <input
           :value="template.title"
           @input="store.setTitle(($event.target as HTMLInputElement).value)"
+          @blur="store.flushCoalesce()"
           class="w-full bg-transparent text-3xl font-semibold tracking-tight outline-none focus:ring-0 placeholder:text-neutral-400"
           placeholder="Untitled Form"
           aria-label="Form title"
@@ -39,6 +66,7 @@ watch(() => route.params.id, seedFromRoute);
         <textarea
           :value="template.description"
           @input="store.setDescription(($event.target as HTMLTextAreaElement).value)"
+          @blur="store.flushCoalesce()"
           class="w-full bg-transparent text-base text-neutral-700 outline-none resize-none placeholder:text-neutral-400"
           rows="2"
           placeholder="Add a description for respondents…"
@@ -59,6 +87,7 @@ watch(() => route.params.id, seedFromRoute);
             <input
               :value="field.label"
               @input="store.setFieldLabel(field.id, ($event.target as HTMLInputElement).value)"
+              @blur="store.flushCoalesce()"
               class="w-full bg-transparent text-lg font-medium outline-none placeholder:text-neutral-400"
               placeholder="Question"
               :aria-label="`Label for field ${field.id}`"
@@ -79,6 +108,7 @@ watch(() => route.params.id, seedFromRoute);
           <input
             :value="field.description ?? ''"
             @input="store.setFieldDescription(field.id, ($event.target as HTMLInputElement).value)"
+            @blur="store.flushCoalesce()"
             class="w-full bg-transparent text-sm text-neutral-600 outline-none placeholder:text-neutral-400"
             placeholder="Helper description (optional)"
           />
@@ -87,6 +117,7 @@ watch(() => route.params.id, seedFromRoute);
         <input
           :value="field.placeholder ?? ''"
           @input="store.setTextFieldPlaceholder(field.id, ($event.target as HTMLInputElement).value)"
+          @blur="store.flushCoalesce()"
           class="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none placeholder:text-neutral-400"
           placeholder="Placeholder shown to respondents"
         />
