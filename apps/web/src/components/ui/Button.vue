@@ -2,7 +2,7 @@
 import { computed, useAttrs } from "vue";
 import { Loader2 } from "lucide-vue-next";
 import { cn } from "../../lib/cn.ts";
-import { buttonVariants, type ButtonVariants } from "./button-variants.ts";
+import { buttonVariants, type ButtonVariants } from "./variants.ts";
 
 const props = withDefaults(
   defineProps<{

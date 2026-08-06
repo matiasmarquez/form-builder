@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cn } from '../../lib/cn.ts';
-import { buttonVariants } from './button-variants.ts';
-import { textControlVariants } from './text-control-variants.ts';
+import { buttonVariants, textControlVariants } from './variants.ts';
 
 describe('buttonVariants with cn', () => {
   it('lets consumer text color override ghost variant text without important', () => {

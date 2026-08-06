@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { alertVariants, type AlertVariants } from './alert-variants.ts';
+import { alertVariants, type AlertVariants } from './variants.ts';
 
 const props = withDefaults(
   defineProps<{

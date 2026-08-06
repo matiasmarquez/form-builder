@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { badgeVariants, type BadgeVariants } from './badge-variants.ts';
+import { badgeVariants, type BadgeVariants } from './variants.ts';
 
 withDefaults(
   defineProps<{

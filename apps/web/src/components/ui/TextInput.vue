@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn.ts';
 import {
   textControlVariants,
   type TextControlVariants,
-} from './text-control-variants.ts';
+} from './variants.ts';
 
 const props = withDefaults(
   defineProps<{
