@@ -1,39 +1,39 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { PartyPopper } from 'lucide-vue-next';
-import { fetchTemplate, TemplateNotFoundError } from '../api.ts';
-import PreviewField from '../components/PreviewField.vue';
-import EditorToolbar from '../components/EditorToolbar.vue';
-import Alert from '../components/ui/Alert.vue';
-import Button from '../components/ui/Button.vue';
-import Card from '../components/ui/Card.vue';
-import { usePreviewStore } from '../stores/preview.ts';
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import { PartyPopper } from "lucide-vue-next";
+import { fetchTemplate, TemplateNotFoundError } from "../api.ts";
+import PreviewField from "../components/PreviewField.vue";
+import EditorToolbar from "../components/EditorToolbar.vue";
+import Alert from "../components/ui/Alert.vue";
+import Button from "../components/ui/Button.vue";
+import Card from "../components/ui/Card.vue";
+import { usePreviewStore } from "../stores/preview.ts";
 
 const route = useRoute();
 const store = usePreviewStore();
 
-type LoadState = 'loading' | 'ready' | 'not-found' | 'error';
+type LoadState = "loading" | "ready" | "not-found" | "error";
 
-const loadState = ref<LoadState>('loading');
+const loadState = ref<LoadState>("loading");
 const loadError = ref<string | null>(null);
 
 const template = computed(() => store.template);
 
 async function seedFromRoute(): Promise<void> {
   const id = String(route.params.id);
-  loadState.value = 'loading';
+  loadState.value = "loading";
   loadError.value = null;
   try {
     const existing = await fetchTemplate(id);
     store.loadTemplate(existing);
-    loadState.value = 'ready';
+    loadState.value = "ready";
   } catch (err) {
     if (err instanceof TemplateNotFoundError) {
-      loadState.value = 'not-found';
+      loadState.value = "not-found";
       return;
     }
-    loadState.value = 'error';
+    loadState.value = "error";
     loadError.value = err instanceof Error ? err.message : String(err);
   }
 }
@@ -44,10 +44,10 @@ function focusFirstInvalid(): void {
   void nextTick(() => {
     const root = document.getElementById(`field-${fieldId}`);
     if (!root) return;
-    root.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const focusable = root.matches('input, textarea, select')
+    root.scrollIntoView({ behavior: "smooth", block: "center" });
+    const focusable = root.matches("input, textarea, select")
       ? root
-      : root.querySelector<HTMLElement>('input, textarea, select');
+      : root.querySelector<HTMLElement>("input, textarea, select");
     focusable?.focus();
   });
 }
@@ -68,15 +68,17 @@ watch(
   () => route.params.id,
   () => {
     void seedFromRoute();
-  },
+  }
 );
 </script>
 
 <template>
   <div>
-    <EditorToolbar />
+    <section
+      class="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-20 sm:px-0 sm:pb-10 sm:pt-24"
+    >
+      <EditorToolbar />
 
-    <section class="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
       <Alert v-if="loadState === 'loading'" variant="info">
         Loading preview…
       </Alert>
@@ -89,7 +91,12 @@ watch(
       <Alert v-else-if="loadState === 'error'" variant="danger">
         <p class="font-medium">Couldn't load this form.</p>
         <p v-if="loadError" class="mt-1">{{ loadError }}</p>
-        <Button variant="secondary" size="sm" class="mt-3" @click="seedFromRoute">
+        <Button
+          variant="secondary"
+          size="sm"
+          class="mt-3"
+          @click="seedFromRoute"
+        >
           Retry
         </Button>
       </Alert>
@@ -99,11 +106,10 @@ watch(
         class="mx-auto max-w-md space-y-4 p-8 text-center"
         role="status"
       >
-        <PartyPopper
-          class="mx-auto size-16 text-primary"
-          aria-hidden="true"
-        />
-        <h1 class="text-2xl font-semibold tracking-tight text-fg">Response recorded</h1>
+        <PartyPopper class="mx-auto size-16 text-primary" aria-hidden="true" />
+        <h1 class="text-2xl font-semibold tracking-tight text-fg">
+          Response recorded
+        </h1>
         <p class="text-sm text-muted-fg">
           This is a preview — no data was actually submitted.
         </p>
@@ -111,10 +117,7 @@ watch(
           Submit another response
         </Button>
         <div>
-          <RouterLink
-            to="/"
-            class="text-sm text-primary hover:underline"
-          >
+          <RouterLink to="/" class="text-sm text-primary hover:underline">
             ← Back to forms
           </RouterLink>
         </div>
@@ -122,13 +125,13 @@ watch(
 
       <form
         v-else-if="template"
-        class="space-y-8"
+        class="space-y-8 mx-auto max-w-3xl"
         novalidate
         @submit="onSubmit"
       >
         <header class="space-y-2 border-b border-border pb-6">
           <h1 class="text-3xl font-semibold tracking-tight text-fg">
-            {{ template.title || 'Untitled Form' }}
+            {{ template.title || "Untitled Form" }}
           </h1>
           <p
             v-if="template.description"

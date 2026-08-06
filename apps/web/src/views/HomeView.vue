@@ -120,7 +120,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
+  <section class="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24">
     <div class="flex items-center justify-end gap-4">
       <Button variant="primary" @click="newForm">
         <Plus class="size-4" aria-hidden="true" />

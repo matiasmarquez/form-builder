@@ -3,11 +3,12 @@
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
 
-  --color-primary: var(--color-teal-600);
-  --color-primary-hover: var(--color-teal-700);
+  --color-primary: var(--color-emerald-600);
+  --color-primary-hover: var(--color-emerald-700);
   --color-primary-fg: white;
   --color-surface: var(--color-neutral-50);
   --color-surface-elevated: white;
+  --color-surface-hover: var(--color-neutral-100);
   --color-border: var(--color-neutral-200);
   --color-border-strong: var(--color-neutral-300);
   --color-fg: var(--color-neutral-900);
@@ -15,15 +16,20 @@
   --color-danger: var(--color-red-600);
   --color-danger-fg: var(--color-red-700);
   --color-warning: var(--color-amber-500);
-  --color-ring: var(--color-teal-500);
+  --color-ring: var(--color-emerald-500);
 }
 
 .dark {
-  --color-primary: var(--color-teal-400);
-  --color-primary-hover: var(--color-teal-300);
+  --color-primary: var(--color-emerald-400);
+  --color-primary-hover: var(--color-emerald-300);
   --color-primary-fg: var(--color-neutral-950);
   --color-surface: var(--color-neutral-950);
   --color-surface-elevated: var(--color-neutral-900);
+  --color-surface-hover: color-mix(
+    in srgb,
+    var(--color-neutral-950) 20%,
+    transparent
+  );
   --color-border: var(--color-neutral-800);
   --color-border-strong: var(--color-neutral-700);
   --color-fg: var(--color-neutral-100);
@@ -31,7 +37,7 @@
   --color-danger: var(--color-red-500);
   --color-danger-fg: var(--color-red-300);
   --color-warning: var(--color-amber-400);
-  --color-ring: var(--color-teal-400);
+  --color-ring: var(--color-emerald-500);
 }
 
 html {
@@ -58,4 +64,14 @@ html.theme-transitioning *:not(svg):not(path) {
   transition-property: background-color, border-color, color, fill, stroke;
   transition-duration: 200ms;
   transition-timing-function: ease;
+}
+
+.editor-dot-grid {
+  background-color: var(--color-surface);
+  background-image: radial-gradient(
+    circle,
+    var(--color-border) 1px,
+    transparent 1px
+  );
+  background-size: 18px 18px;
 }

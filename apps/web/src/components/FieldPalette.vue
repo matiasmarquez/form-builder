@@ -1,31 +1,32 @@
 <script setup lang="ts">
-import type { Field } from '@form-builder/shared';
-import { useEditorStore } from '../stores/editor.ts';
+import type { Field } from "@form-builder/shared";
+import { Plus } from "lucide-vue-next";
+import { useEditorStore } from "../stores/editor.ts";
 import {
   MULTI_FIELD_TYPES,
   TEXT_FIELD_TYPES,
   fieldTypeIcon,
   fieldTypeLabel,
-} from '../lib/field-type-meta.ts';
-import Button from './ui/Button.vue';
+} from "../lib/field-type-meta.ts";
+import Button from "./ui/Button.vue";
 
 const store = useEditorStore();
 
-function addField(type: Field['type']): void {
+function addField(type: Field["type"]): void {
   switch (type) {
-    case 'text':
+    case "text":
       store.addTextField();
       break;
-    case 'paragraph':
+    case "paragraph":
       store.addParagraphField();
       break;
-    case 'checkbox':
+    case "checkbox":
       store.addCheckboxField();
       break;
-    case 'radio':
+    case "radio":
       store.addRadioField();
       break;
-    case 'select':
+    case "select":
       store.addSelectField();
       break;
     default: {
@@ -37,35 +38,59 @@ function addField(type: Field['type']): void {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <div class="space-y-2">
-      <h2 class="text-xs uppercase tracking-wide text-muted-fg">Text elements</h2>
-      <div class="flex flex-col gap-1">
+      <h2 class="text-xs uppercase tracking-wide text-muted-fg">
+        Text elements
+      </h2>
+      <div class="grid grid-cols-2 gap-1 lg:grid-cols-1">
         <Button
           v-for="type in TEXT_FIELD_TYPES"
           :key="type"
           variant="ghost"
-          class="w-full justify-start text-base font-medium"
+          class="group w-full justify-start text-sm font-medium"
           @click="addField(type)"
         >
-          <component :is="fieldTypeIcon(type)" class="size-4 shrink-0" aria-hidden="true" />
-          {{ fieldTypeLabel(type) }}
+          <component
+            :is="fieldTypeIcon(type)"
+            class="size-4 shrink-0"
+            aria-hidden="true"
+          />
+          <span class="min-w-0 flex-1 truncate text-left">{{
+            fieldTypeLabel(type)
+          }}</span>
+          <Plus
+            class="size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            aria-hidden="true"
+          />
         </Button>
       </div>
     </div>
 
     <div class="space-y-2">
-      <h2 class="text-xs uppercase tracking-wide text-muted-fg">Multi elements</h2>
-      <div class="flex flex-col gap-1">
+      <h2 class="text-xs uppercase tracking-wide text-muted-fg">
+        Multi elements
+      </h2>
+      <div class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
         <Button
           v-for="type in MULTI_FIELD_TYPES"
           :key="type"
           variant="ghost"
-          class="w-full justify-start text-base font-medium"
+          class="group w-full justify-start text-sm font-medium"
           @click="addField(type)"
         >
-          <component :is="fieldTypeIcon(type)" class="size-4 shrink-0" aria-hidden="true" />
-          {{ fieldTypeLabel(type) }}
+          <component
+            :is="fieldTypeIcon(type)"
+            class="size-4 shrink-0"
+            aria-hidden="true"
+          />
+          <span class="min-w-0 flex-1 truncate text-left">{{
+            fieldTypeLabel(type)
+          }}</span>
+          <Plus
+            class="size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            aria-hidden="true"
+          />
         </Button>
       </div>
     </div>

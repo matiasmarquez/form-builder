@@ -11,6 +11,7 @@ import type {
   SelectField,
   TextField,
 } from '@form-builder/shared';
+import { changedFieldIds } from '../lib/changed-field-ids.ts';
 
 // Field variants that carry an `options: FieldOption[]` array. Kept as a
 // TS-only alias so the runtime discriminated union stays authoritative in
@@ -136,6 +137,10 @@ interface EditorState {
   saveStatus: SaveStatus;
   lastSavedAt: number | null;
   lastSaveError: string | null;
+  // Field ids to expand after undo/redo. Bumped token so watchers re-fire
+  // even when the same ids are focused twice in a row.
+  historyFocusFieldIds: string[];
+  historyFocusToken: number;
 }
 
 // The pending pause timer is kept off the reactive store state — it's a raw
@@ -161,6 +166,8 @@ export const useEditorStore = defineStore('editor', {
     saveStatus: 'idle',
     lastSavedAt: null,
     lastSaveError: null,
+    historyFocusFieldIds: [],
+    historyFocusToken: 0,
   }),
   getters: {
     canUndo: (state) => state.undoStack.length > 0,
@@ -183,6 +190,8 @@ export const useEditorStore = defineStore('editor', {
       this.saveStatus = 'idle';
       this.lastSavedAt = null;
       this.lastSaveError = null;
+      this.historyFocusFieldIds = [];
+      this.historyFocusToken = 0;
     },
 
     // Load an existing, already-persisted template from the server. Resets
@@ -199,6 +208,8 @@ export const useEditorStore = defineStore('editor', {
       this.saveStatus = 'saved';
       this.lastSavedAt = Date.now();
       this.lastSaveError = null;
+      this.historyFocusFieldIds = [];
+      this.historyFocusToken = 0;
     },
 
     // --- history primitives ---------------------------------------------------
@@ -269,20 +280,26 @@ export const useEditorStore = defineStore('editor', {
       if (!this.template || this.undoStack.length === 0) return;
       this.flushCoalesce();
       const step = this.undoStack.pop()!;
+      const before = this.template;
       this.redoStack.push({ snapshot: cloneTemplate(this.template) });
       this.template = step.snapshot;
       this.isDirty = true;
       this.revision++;
+      this.historyFocusFieldIds = changedFieldIds(before, this.template);
+      this.historyFocusToken++;
     },
 
     redo(): void {
       if (!this.template || this.redoStack.length === 0) return;
       this.flushCoalesce();
       const step = this.redoStack.pop()!;
+      const before = this.template;
       this.undoStack.push({ snapshot: cloneTemplate(this.template) });
       this.template = step.snapshot;
       this.isDirty = true;
       this.revision++;
+      this.historyFocusFieldIds = changedFieldIds(before, this.template);
+      this.historyFocusToken++;
     },
 
     // --- mutations ------------------------------------------------------------

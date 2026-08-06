@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { useEditorStore } from '../stores/editor.ts';
-import { useAutosaveStore } from '../stores/autosave.ts';
-import { useAutosave } from '../composables/useAutosave.ts';
-import { useUnsavedGuards } from '../composables/useUnsavedGuards.ts';
-import { fetchTemplate, TemplateNotFoundError } from '../api.ts';
-import EditorHeader from '../components/EditorHeader.vue';
-import EditorToolbar from '../components/EditorToolbar.vue';
-import FieldList from '../components/FieldList.vue';
-import FieldPalette from '../components/FieldPalette.vue';
-import Textarea from '../components/ui/Textarea.vue';
-import TextInput from '../components/ui/TextInput.vue';
+import { computed, onBeforeUnmount, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { useEditorStore } from "../stores/editor.ts";
+import { useAutosaveStore } from "../stores/autosave.ts";
+import { useAutosave } from "../composables/useAutosave.ts";
+import { useUnsavedGuards } from "../composables/useUnsavedGuards.ts";
+import { fetchTemplate, TemplateNotFoundError } from "../api.ts";
+import EditorHeader from "../components/EditorHeader.vue";
+import EditorToolbar from "../components/EditorToolbar.vue";
+import FieldList from "../components/FieldList.vue";
+import FieldPalette from "../components/FieldPalette.vue";
+import Card from "../components/ui/Card.vue";
+import Textarea from "../components/ui/Textarea.vue";
+import TextInput from "../components/ui/TextInput.vue";
 
 const route = useRoute();
 const store = useEditorStore();
@@ -53,7 +54,7 @@ function onKeydown(event: KeyboardEvent): void {
   const mod = event.metaKey || event.ctrlKey;
   if (!mod) return;
   const key = event.key.toLowerCase();
-  if (key === 'z') {
+  if (key === "z") {
     event.preventDefault();
     store.flushCoalesce();
     if (event.shiftKey) {
@@ -63,7 +64,7 @@ function onKeydown(event: KeyboardEvent): void {
     }
     return;
   }
-  if (key === 's') {
+  if (key === "s") {
     event.preventDefault();
     void saveNow();
   }
@@ -71,65 +72,59 @@ function onKeydown(event: KeyboardEvent): void {
 
 onMounted(() => {
   void seedFromRoute();
-  window.addEventListener('keydown', onKeydown);
+  window.addEventListener("keydown", onKeydown);
 });
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeydown);
+  window.removeEventListener("keydown", onKeydown);
 });
 watch(
   () => route.params.id,
   () => {
     void seedFromRoute();
-  },
+  }
 );
 </script>
 
 <template>
-  <div>
-    <EditorToolbar />
+  <div class="editor-dot-grid min-h-screen px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24">
+    <section v-if="template" class="mx-auto max-w-5xl space-y-4">
+      <EditorToolbar />
 
-    <div class="flex min-h-[calc(100vh-7.5rem)]">
-      <aside
-        class="hidden w-60 shrink-0 border-r border-border bg-surface-elevated p-4 lg:block"
-      >
-        <FieldPalette />
-      </aside>
+      <Card class="p-4 sm:px-5 sm:py-4">
+        <EditorHeader :on-save="saveNow" />
+      </Card>
 
-      <div class="min-w-0 flex-1 px-4 py-8 sm:px-6">
-        <section v-if="template" class="mx-auto max-w-3xl space-y-6">
-          <EditorHeader :on-save="saveNow" />
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <Card class="w-full shrink-0 p-4 lg:sticky lg:top-24 lg:w-56">
+          <FieldPalette />
+        </Card>
 
-          <header class="space-y-3 border-b border-border pb-6">
-            <label class="block">
-              <span class="sr-only">Form title</span>
-              <TextInput
-                variant="inline-borderless"
-                class="text-3xl font-semibold tracking-tight"
-                :model-value="template.title"
-                placeholder="Untitled Form"
-                aria-label="Form title"
-                @update:model-value="store.setTitle($event)"
-                @blur="store.flushCoalesce()"
-              />
-            </label>
-            <label class="block">
-              <span class="sr-only">Form description</span>
-              <Textarea
-                variant="inline-borderless"
-                class="resize-none text-sm"
-                :rows="2"
-                :model-value="template.description"
-                placeholder="Add a description for respondents…"
-                aria-label="Form description"
-                @update:model-value="store.setDescription($event)"
-                @blur="store.flushCoalesce()"
-              />
-            </label>
-          </header>
+        <Card class="min-w-0 flex-1 space-y-6 p-5 sm:p-6">
+          <div class="space-y-2">
+            <TextInput
+              variant="inline-borderless"
+              class="px-2 py-1 -mx-2 text-3xl! font-semibold tracking-tight"
+              :model-value="template.title"
+              placeholder="Untitled Form"
+              aria-label="Form title"
+              @update:model-value="store.setTitle($event)"
+              @blur="store.flushCoalesce()"
+            />
+            <Textarea
+              variant="inline-borderless"
+              class="resize-none px-2 py-1 -mx-2 text-lg!"
+              :rows="2"
+              :model-value="template.description"
+              placeholder="Add a description for respondents…"
+              aria-label="Form description"
+              @update:model-value="store.setDescription($event)"
+              @blur="store.flushCoalesce()"
+            />
+          </div>
 
           <FieldList />
-        </section>
+        </Card>
       </div>
-    </div>
+    </section>
   </div>
 </template>

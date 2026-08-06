@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { FieldOption } from '@form-builder/shared';
-import { useEditorStore, isChoiceField } from '../stores/editor.ts';
-import { useReorderableList } from '../composables/useReorderableList.ts';
+import { computed } from "vue";
+import type { FieldOption } from "@form-builder/shared";
+import { useEditorStore, isChoiceField } from "../stores/editor.ts";
+import { useReorderableList } from "../composables/useReorderableList.ts";
 
 const props = defineProps<{
   fieldId: string;
@@ -17,11 +17,12 @@ const optionIds = computed<string[]>(() => {
   return field.options.map((o) => o.id);
 });
 
-const { parentRef, ids, moveByKeyboard, onHandleMouseDown } = useReorderableList({
-  source: () => optionIds.value,
-  commit: (newOrder) => store.reorderFieldOptions(props.fieldId, newOrder),
-  dragHandle: '[data-option-handle]',
-});
+const { parentRef, ids, moveByKeyboard, onHandleMouseDown } =
+  useReorderableList({
+    source: () => optionIds.value,
+    commit: (newOrder) => store.reorderFieldOptions(props.fieldId, newOrder),
+    dragHandle: "[data-option-handle]",
+  });
 
 function findOption(id: string): FieldOption | undefined {
   const field = store.findField(props.fieldId);
@@ -33,7 +34,7 @@ function optionIndex(id: string): number {
   return ids.value.indexOf(id);
 }
 
-function fieldType(): 'checkbox' | 'radio' | 'select' | null {
+function fieldType(): "checkbox" | "radio" | "select" | null {
   const field = store.findField(props.fieldId);
   if (!field || !isChoiceField(field)) return null;
   return field.type;
@@ -44,16 +45,16 @@ function fieldType(): 'checkbox' | 'radio' | 'select' | null {
 function refocusHandle(optionId: string): void {
   requestAnimationFrame(() => {
     const el = parentRef.value?.querySelector<HTMLButtonElement>(
-      `[data-option-handle="${optionId}"]`,
+      `[data-option-handle="${optionId}"]`
     );
     el?.focus();
   });
 }
 
 function onHandleKeydown(event: KeyboardEvent, optionId: string): void {
-  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+  if (event.key === "ArrowUp" || event.key === "ArrowDown") {
     event.preventDefault();
-    const dir = event.key === 'ArrowUp' ? -1 : 1;
+    const dir = event.key === "ArrowUp" ? -1 : 1;
     const to = moveByKeyboard(optionId, dir);
     if (to !== null) refocusHandle(optionId);
   }
@@ -71,7 +72,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
     <li
       v-for="(optionId, index) in ids"
       :key="optionId"
-      class="flex items-center gap-2"
+      class="flex items-center gap-2 border border-border px-2 py-1 rounded-md"
     >
       <button
         type="button"
@@ -79,7 +80,9 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         @mousedown="onHandleMouseDown"
         @keydown="onHandleKeydown($event, optionId)"
         class="cursor-grab text-muted-fg hover:text-fg focus:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1"
-        :aria-label="`Reorder option ${optionIndex(optionId) + 1}. Use arrow up and down to move.`"
+        :aria-label="`Reorder option ${
+          optionIndex(optionId) + 1
+        }. Use arrow up and down to move.`"
         aria-keyshortcuts="ArrowUp ArrowDown"
       >
         <span aria-hidden="true">⋮⋮</span>
@@ -106,7 +109,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
           store.setFieldOptionLabel(
             fieldId,
             optionId,
-            ($event.target as HTMLInputElement).value,
+            ($event.target as HTMLInputElement).value
           )
         "
         @blur="store.flushCoalesce()"
@@ -119,7 +122,9 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         @click="store.deleteFieldOption(fieldId, optionId)"
         :disabled="!canDeleteMore"
         class="text-xs text-muted-fg hover:text-danger disabled:opacity-40 disabled:hover:text-muted-fg"
-        :aria-label="`Delete option ${findOption(optionId)?.label || index + 1}`"
+        :aria-label="`Delete option ${
+          findOption(optionId)?.label || index + 1
+        }`"
       >
         Remove
       </button>

@@ -1,12 +1,12 @@
-import type { Component } from 'vue';
 import type { Field } from '@form-builder/shared';
 import {
   AlignLeft,
-  CircleDot,
+  CircleCheckBig,
   SquareCheck,
   SquareChevronDown,
-  Type,
+  Type
 } from 'lucide-vue-next';
+import type { Component } from 'vue';
 
 export function fieldTypeLabel(type: Field['type']): string {
   switch (type) {
@@ -36,7 +36,7 @@ export function fieldTypeIcon(type: Field['type']): Component {
     case 'checkbox':
       return SquareCheck;
     case 'radio':
-      return CircleDot;
+      return CircleCheckBig;
     case 'select':
       return SquareChevronDown;
     default: {

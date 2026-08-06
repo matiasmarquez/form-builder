@@ -28,7 +28,11 @@ const attrs = useAttrs();
 
 const variantClass = computed(() => {
   if (props.variant === 'inline-borderless') {
-    return 'border border-transparent bg-transparent hover:border-border focus-visible:border-border-strong';
+    return [
+      'border-0 bg-transparent shadow-none cursor-text',
+      'hover:bg-surface-hover',
+      'focus-visible:bg-surface-hover',
+    ].join(' ');
   }
   return 'border border-border-strong bg-surface-elevated';
 });
