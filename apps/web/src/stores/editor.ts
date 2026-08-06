@@ -128,6 +128,11 @@ interface EditorState {
   isPersisted: boolean;
   // Does the in-memory template differ from the last successful save?
   isDirty: boolean;
+  // Monotonic counter bumped on every user mutation (including inside a
+  // coalesce window). Consumers that want a true "restart on every keystroke"
+  // debounce — like autosave — watch this instead of `isDirty`, which only
+  // toggles false→true once and would otherwise miss subsequent keystrokes.
+  revision: number;
   saveStatus: SaveStatus;
   lastSavedAt: number | null;
   lastSaveError: string | null;
@@ -152,6 +157,7 @@ export const useEditorStore = defineStore('editor', {
     coalesceKey: null,
     isPersisted: false,
     isDirty: false,
+    revision: 0,
     saveStatus: 'idle',
     lastSavedAt: null,
     lastSaveError: null,
@@ -173,6 +179,7 @@ export const useEditorStore = defineStore('editor', {
       this.coalesceKey = null;
       this.isPersisted = false;
       this.isDirty = false;
+      this.revision = 0;
       this.saveStatus = 'idle';
       this.lastSavedAt = null;
       this.lastSaveError = null;
@@ -188,6 +195,7 @@ export const useEditorStore = defineStore('editor', {
       this.coalesceKey = null;
       this.isPersisted = true;
       this.isDirty = false;
+      this.revision = 0;
       this.saveStatus = 'saved';
       this.lastSavedAt = Date.now();
       this.lastSaveError = null;
@@ -205,8 +213,9 @@ export const useEditorStore = defineStore('editor', {
 
       // Any user mutation makes the in-memory template diverge from the last
       // successful save. Set this BEFORE the coalesce early-return so
-      // in-flight typing also flips the flag.
+      // in-flight typing also flips the flag and bumps the revision counter.
       this.isDirty = true;
+      this.revision++;
 
       if (coalesceKey !== null && coalesceKey === this.coalesceKey) {
         // Continuing an in-flight coalesced edit: refresh the pause timer, do
@@ -263,6 +272,7 @@ export const useEditorStore = defineStore('editor', {
       this.redoStack.push({ snapshot: cloneTemplate(this.template) });
       this.template = step.snapshot;
       this.isDirty = true;
+      this.revision++;
     },
 
     redo(): void {
@@ -272,6 +282,7 @@ export const useEditorStore = defineStore('editor', {
       this.undoStack.push({ snapshot: cloneTemplate(this.template) });
       this.template = step.snapshot;
       this.isDirty = true;
+      this.revision++;
     },
 
     // --- mutations ------------------------------------------------------------

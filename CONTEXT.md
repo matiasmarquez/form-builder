@@ -48,7 +48,7 @@ Editor store flag — has this `FormTemplate` ever been successfully saved to th
 Editor store flag — does the in-memory `FormTemplate` differ from the last version successfully saved to the server? Independent of `isPersisted`.
 
 **Autosave**:
-Debounced background persistence of the current `FormTemplate` to the server. Emits status transitions the header renders: `Saved • Ns ago` / `Saving…` / `Failed — retry`. User-controllable via a global toggle in `localStorage`. Never creates a `HistoryStep`.
+Debounced background persistence of the current `FormTemplate` to the server. The debounce timer restarts on every user mutation, so a save fires once the user pauses editing for `AUTOSAVE_DEBOUNCE_MS`. Emits status transitions the header renders: `Saved • Ns ago` / `Saving…` / `Failed — retry`. User-controllable via a global toggle in `localStorage`. Never creates a `HistoryStep`.
 _Avoid_: Sync, Persist
 
 ### Conditional visibility (optional feature)
