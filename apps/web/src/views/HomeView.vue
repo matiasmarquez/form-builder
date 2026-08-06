@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import type { TemplateListItem } from '@form-builder/shared';
 import { createTemplate, deleteTemplate, fetchTemplate, fetchTemplateList } from '../api.ts';
-import { duplicateTemplate } from '../duplicate.ts';
+import { duplicateTemplate } from '../lib/duplicate.ts';
 
 const router = useRouter();
 
