@@ -12,10 +12,10 @@ This document is the source of truth for ticket [00-design-system-and-polish](./
 
 ### 1.1 Accent colour
 
-Teal.
+Emerald.
 
-- **Light**: primary `teal-600`, hover `teal-700`, focus ring `teal-500`.
-- **Dark**: primary `teal-400`, hover `teal-300`, focus ring `teal-400`.
+- **Light**: primary `emerald-600`, hover `emerald-700`, focus ring `emerald-500`.
+- **Dark**: primary `emerald-400`, hover `emerald-300`, focus ring `emerald-400`.
 
 ### 1.2 Semantic tokens
 
@@ -23,8 +23,8 @@ A minimal `tokens.css`-style block declared inside `@theme` in `apps/web/src/sty
 
 | Token                     | Light value        | Dark value         | Purpose                                       |
 | ------------------------- | ------------------ | ------------------ | --------------------------------------------- |
-| `--color-primary`         | `teal-600`         | `teal-400`         | Primary CTA background, active tab, links     |
-| `--color-primary-hover`   | `teal-700`         | `teal-300`         | Hover state of primary elements               |
+| `--color-primary`         | `emerald-600`      | `emerald-400`      | Primary CTA background, active tab, links     |
+| `--color-primary-hover`   | `emerald-700`      | `emerald-300`      | Hover state of primary elements               |
 | `--color-primary-fg`      | `white`            | `neutral-950`      | Foreground on primary background              |
 | `--color-surface`         | `neutral-50`       | `neutral-950`      | Page background                               |
 | `--color-surface-elevated`| `white`            | `neutral-900`      | Cards, drawer, alerts, elevated surfaces      |
@@ -35,7 +35,7 @@ A minimal `tokens.css`-style block declared inside `@theme` in `apps/web/src/sty
 | `--color-danger`          | `red-600`          | `red-500`          | Destructive actions, errors                   |
 | `--color-danger-fg`       | `red-700`          | `red-300`          | Error message text                            |
 | `--color-warning`         | `amber-500`        | `amber-400`        | "Unsaved changes" dirty state                 |
-| `--color-ring`            | `teal-500`         | `teal-400`         | Focus ring colour                             |
+| `--color-ring`            | `emerald-500`      | `emerald-400`      | Focus ring colour                             |
 
 Components consume these via Tailwind arbitrary values (`bg-[--color-surface-elevated]`, `text-[--color-fg]`, etc.) so a single class works in both themes.
 

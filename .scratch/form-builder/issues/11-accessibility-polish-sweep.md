@@ -2,7 +2,7 @@
 
 **What to build:** a deliberate a11y pass across the entire interactive surface once editor, DnD, and preview are complete.
 
-**Blocked by:** 09, 10.
+**Blocked by:** 00, 09, 10.
 
 **Status:** ready-for-agent
 
