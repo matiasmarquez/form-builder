@@ -78,7 +78,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         :data-option-handle="optionId"
         @mousedown="onHandleMouseDown"
         @keydown="onHandleKeydown($event, optionId)"
-        class="cursor-grab text-neutral-400 hover:text-neutral-700 focus:text-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 rounded px-1"
+        class="cursor-grab text-muted-fg hover:text-fg focus:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1"
         :aria-label="`Reorder option ${optionIndex(optionId) + 1}. Use arrow up and down to move.`"
         aria-keyshortcuts="ArrowUp ArrowDown"
       >
@@ -86,17 +86,17 @@ const canDeleteMore = computed(() => ids.value.length > 1);
       </button>
       <span
         v-if="fieldType() === 'radio'"
-        class="h-4 w-4 rounded-full border border-neutral-300 shrink-0"
+        class="h-4 w-4 rounded-full border border-border-strong shrink-0"
         aria-hidden="true"
       ></span>
       <span
         v-else-if="fieldType() === 'checkbox'"
-        class="h-4 w-4 rounded border border-neutral-300 shrink-0"
+        class="h-4 w-4 rounded border border-border-strong shrink-0"
         aria-hidden="true"
       ></span>
       <span
         v-else
-        class="w-6 text-right text-xs text-neutral-500 shrink-0"
+        class="w-6 text-right text-xs text-muted-fg shrink-0"
         aria-hidden="true"
         >{{ index + 1 }}.</span
       >
@@ -110,7 +110,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
           )
         "
         @blur="store.flushCoalesce()"
-        class="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400 border-b border-transparent focus:border-neutral-300 py-1"
+        class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-fg border-b border-transparent focus:border-border py-1 text-fg"
         :placeholder="`Option ${index + 1}`"
         :aria-label="`Option ${index + 1} label`"
       />
@@ -118,7 +118,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         type="button"
         @click="store.deleteFieldOption(fieldId, optionId)"
         :disabled="!canDeleteMore"
-        class="text-xs text-neutral-400 hover:text-red-600 disabled:opacity-40 disabled:hover:text-neutral-400"
+        class="text-xs text-muted-fg hover:text-danger disabled:opacity-40 disabled:hover:text-muted-fg"
         :aria-label="`Delete option ${findOption(optionId)?.label || index + 1}`"
       >
         Remove

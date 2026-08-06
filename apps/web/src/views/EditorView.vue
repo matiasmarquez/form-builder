@@ -7,7 +7,11 @@ import { useAutosave } from '../composables/useAutosave.ts';
 import { useUnsavedGuards } from '../composables/useUnsavedGuards.ts';
 import { fetchTemplate, TemplateNotFoundError } from '../api.ts';
 import EditorHeader from '../components/EditorHeader.vue';
+import EditorToolbar from '../components/EditorToolbar.vue';
 import FieldList from '../components/FieldList.vue';
+import FieldPalette from '../components/FieldPalette.vue';
+import Textarea from '../components/ui/Textarea.vue';
+import TextInput from '../components/ui/TextInput.vue';
 
 const route = useRoute();
 const store = useEditorStore();
@@ -15,9 +19,6 @@ const autosave = useAutosaveStore();
 
 const template = computed(() => store.template);
 
-// Load an existing template, or fall through to a fresh unpersisted template.
-// A 404 for an unknown id is expected on the New-form path (the id is minted
-// client-side, then the first save POSTs it into existence).
 async function seedFromRoute(): Promise<void> {
   const id = String(route.params.id);
   try {
@@ -48,9 +49,6 @@ async function saveNow(): Promise<void> {
   }
 }
 
-// Cmd+Z / Ctrl+Z → undo, Cmd+Shift+Z / Ctrl+Shift+Z → redo.
-// Cmd+S / Ctrl+S → save immediately (force-flush any pending debounce when
-// autosave is on; direct save when autosave is off).
 function onKeydown(event: KeyboardEvent): void {
   const mod = event.metaKey || event.ctrlKey;
   if (!mod) return;
@@ -78,79 +76,60 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown);
 });
-watch(() => route.params.id, () => {
-  void seedFromRoute();
-});
-
+watch(
+  () => route.params.id,
+  () => {
+    void seedFromRoute();
+  },
+);
 </script>
 
 <template>
-  <section v-if="template" class="space-y-8">
-    <EditorHeader :on-save="saveNow" />
-    <header class="space-y-3 border-b border-neutral-200 pb-6">
-      <label class="block">
-        <span class="sr-only">Form title</span>
-        <input
-          :value="template.title"
-          @input="store.setTitle(($event.target as HTMLInputElement).value)"
-          @blur="store.flushCoalesce()"
-          class="w-full bg-transparent text-3xl font-semibold tracking-tight outline-none focus:ring-0 placeholder:text-neutral-400"
-          placeholder="Untitled Form"
-          aria-label="Form title"
-        />
-      </label>
-      <label class="block">
-        <span class="sr-only">Form description</span>
-        <textarea
-          :value="template.description"
-          @input="store.setDescription(($event.target as HTMLTextAreaElement).value)"
-          @blur="store.flushCoalesce()"
-          class="w-full bg-transparent text-base text-neutral-700 outline-none resize-none placeholder:text-neutral-400"
-          rows="2"
-          placeholder="Add a description for respondents…"
-          aria-label="Form description"
-        ></textarea>
-      </label>
-    </header>
+  <div>
+    <EditorToolbar />
 
-    <FieldList />
+    <div class="flex min-h-[calc(100vh-7.5rem)]">
+      <aside
+        class="hidden w-60 shrink-0 border-r border-border bg-surface-elevated p-4 lg:block"
+      >
+        <FieldPalette />
+      </aside>
 
-    <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
-      <button
-        type="button"
-        @click="store.addTextField()"
-        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
-      >
-        + Short answer
-      </button>
-      <button
-        type="button"
-        @click="store.addParagraphField()"
-        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
-      >
-        + Paragraph
-      </button>
-      <button
-        type="button"
-        @click="store.addCheckboxField()"
-        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
-      >
-        + Checkboxes
-      </button>
-      <button
-        type="button"
-        @click="store.addRadioField()"
-        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
-      >
-        + Multiple choice
-      </button>
-      <button
-        type="button"
-        @click="store.addSelectField()"
-        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
-      >
-        + Dropdown
-      </button>
+      <div class="min-w-0 flex-1 px-4 py-8 sm:px-6">
+        <section v-if="template" class="mx-auto max-w-3xl space-y-6">
+          <EditorHeader :on-save="saveNow" />
+
+          <header class="space-y-3 border-b border-border pb-6">
+            <label class="block">
+              <span class="sr-only">Form title</span>
+              <TextInput
+                variant="inline-borderless"
+                class="text-3xl font-semibold tracking-tight"
+                :model-value="template.title"
+                placeholder="Untitled Form"
+                aria-label="Form title"
+                @update:model-value="store.setTitle($event)"
+                @blur="store.flushCoalesce()"
+              />
+            </label>
+            <label class="block">
+              <span class="sr-only">Form description</span>
+              <Textarea
+                variant="inline-borderless"
+                class="resize-none text-sm"
+                :rows="2"
+                :model-value="template.description"
+                placeholder="Add a description for respondents…"
+                aria-label="Form description"
+                @update:model-value="store.setDescription($event)"
+                @blur="store.flushCoalesce()"
+              />
+            </label>
+          </header>
+
+          <FieldList />
+        </section>
+      </div>
     </div>
-  </section>
+  </div>
 </template>

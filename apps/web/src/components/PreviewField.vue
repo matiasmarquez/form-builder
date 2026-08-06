@@ -58,7 +58,7 @@ function onBlur(event?: FocusEvent): void {
 }
 
 const inputClass =
-  'w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500';
+  'w-full rounded-md border border-border-strong bg-surface-elevated px-3 py-2 text-sm text-fg outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:ring-ring';
 </script>
 
 <template>
@@ -67,18 +67,18 @@ const inputClass =
       <label
         v-if="field.type !== 'radio' && field.type !== 'checkbox'"
         :for="controlId"
-        class="text-base font-medium text-neutral-900"
+        class="text-base font-medium text-fg"
       >
         {{ field.label || 'Untitled field' }}
-        <span v-if="field.required" class="text-red-600" aria-hidden="true"> *</span>
+        <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
         <span v-if="field.required" class="sr-only"> (required)</span>
       </label>
       <p
         v-else
-        class="text-base font-medium text-neutral-900"
+        class="text-base font-medium text-fg"
       >
         {{ field.label || 'Untitled field' }}
-        <span v-if="field.required" class="text-red-600" aria-hidden="true"> *</span>
+        <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
         <span v-if="field.required" class="sr-only"> (required)</span>
       </p>
     </div>
@@ -86,7 +86,7 @@ const inputClass =
     <p
       v-if="field.description"
       :id="descriptionId"
-      class="text-sm text-neutral-600"
+      class="text-sm text-muted-fg"
     >
       {{ field.description }}
     </p>
@@ -153,7 +153,7 @@ const inputClass =
       <label
         v-for="opt in field.options"
         :key="opt.id"
-        class="flex items-center gap-2 text-sm text-neutral-800"
+        class="flex items-center gap-2 text-sm text-fg"
       >
         <input
           type="radio"
@@ -162,7 +162,7 @@ const inputClass =
           :checked="answer === opt.id"
           :aria-describedby="describedBy"
           :aria-invalid="error ? true : undefined"
-          class="h-4 w-4 border-neutral-300"
+          class="h-4 w-4 border-border-strong"
           @change="onRadioChange(opt.id)"
         />
         <span>{{ opt.label || 'Untitled option' }}</span>
@@ -183,7 +183,7 @@ const inputClass =
       <label
         v-for="opt in field.options"
         :key="opt.id"
-        class="flex items-center gap-2 text-sm text-neutral-800"
+        class="flex items-center gap-2 text-sm text-fg"
       >
         <input
           type="checkbox"
@@ -191,7 +191,7 @@ const inputClass =
           :checked="Array.isArray(answer) && answer.includes(opt.id)"
           :aria-describedby="describedBy"
           :aria-invalid="error ? true : undefined"
-          class="h-4 w-4 rounded border-neutral-300"
+          class="h-4 w-4 rounded border-border-strong"
           @change="
             onCheckboxToggle(opt.id, ($event.target as HTMLInputElement).checked)
           "
@@ -204,7 +204,7 @@ const inputClass =
       v-if="error"
       :id="errorId"
       role="alert"
-      class="text-sm text-red-700"
+      class="text-sm text-danger-fg"
     >
       {{ error }}
     </p>

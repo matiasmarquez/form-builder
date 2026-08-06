@@ -1,7 +1,14 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import AppHeader from './components/AppHeader.vue';
+import { useTheme } from './composables/useTheme.ts';
+
+// Ensure theme class stays synced after the pre-paint boot script.
+useTheme();
+</script>
 
 <template>
-  <main class="min-h-full px-6 py-10 max-w-2xl mx-auto">
+  <div class="min-h-full bg-surface text-fg">
+    <AppHeader />
     <RouterView />
-  </main>
+  </div>
 </template>

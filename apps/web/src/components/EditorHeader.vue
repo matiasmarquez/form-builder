@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
+import { AlertCircle, Check, Circle, Loader2 } from 'lucide-vue-next';
 import { useEditorStore } from '../stores/editor.ts';
 import { useAutosaveStore } from '../stores/autosave.ts';
+import Button from './ui/Button.vue';
 
 const props = defineProps<{
   onSave: () => void | Promise<void>;
@@ -10,81 +12,111 @@ const props = defineProps<{
 
 const editor = useEditorStore();
 const autosave = useAutosaveStore();
-const { isPersisted, isDirty, saveStatus, lastSavedAt } = storeToRefs(editor);
+const { isPersisted, isDirty, saveStatus } = storeToRefs(editor);
 const { enabled: autosaveEnabled } = storeToRefs(autosave);
 
-// Re-render the "Saved • Ns ago" label once a second. The tick is a plain ref
-// whose value is unused — the getter below just needs a reactive dep to bump.
-const now = ref(Date.now());
-let tickHandle: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
-  tickHandle = setInterval(() => {
-    now.value = Date.now();
-  }, 1000);
-});
-onBeforeUnmount(() => {
-  if (tickHandle !== null) clearInterval(tickHandle);
+type StatusKind = 'new' | 'saving' | 'failed' | 'unsaved' | 'saved';
+
+const statusKind = computed<StatusKind>(() => {
+  if (!isPersisted.value) return 'new';
+  if (saveStatus.value === 'saving') return 'saving';
+  if (saveStatus.value === 'failed') return 'failed';
+  if (!autosaveEnabled.value && isDirty.value) return 'unsaved';
+  return 'saved';
 });
 
-function formatAgo(ts: number, current: number): string {
-  const seconds = Math.max(0, Math.round((current - ts) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  return `${hours}h ago`;
-}
-
-// Status priority (spec order):
-//   1. New form — not saved yet     when !isPersisted
-//   2. Saving…                       when saveStatus === 'saving'
-//   3. Failed — retry                when saveStatus === 'failed'
-//   4. Unsaved changes               when autosave off && isDirty
-//   5. Saved • Ns ago                otherwise
-const statusLabel = computed<string>(() => {
-  if (!isPersisted.value) return 'New form — not saved yet';
-  if (saveStatus.value === 'saving') return 'Saving…';
-  if (saveStatus.value === 'failed') return 'Failed — retry';
-  if (!autosaveEnabled.value && isDirty.value) return 'Unsaved changes';
-  if (lastSavedAt.value !== null) return `Saved • ${formatAgo(lastSavedAt.value, now.value)}`;
-  return 'Saved';
-});
-
-const statusTone = computed(() => {
-  if (saveStatus.value === 'failed') return 'text-red-600';
-  if (saveStatus.value === 'saving') return 'text-neutral-500';
-  if (!isPersisted.value) return 'text-neutral-500';
-  if (!autosaveEnabled.value && isDirty.value) return 'text-amber-600';
-  return 'text-neutral-500';
+const statusLabel = computed(() => {
+  switch (statusKind.value) {
+    case 'new':
+      return 'Not saved yet';
+    case 'saving':
+      return 'Saving…';
+    case 'failed':
+      return 'Failed — retry';
+    case 'unsaved':
+      return 'Unsaved changes';
+    case 'saved':
+      return 'Saved';
+    default: {
+      const _exhaustive: never = statusKind.value;
+      return _exhaustive;
+    }
+  }
 });
 </script>
 
 <template>
   <header
-    class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 pb-4"
+    class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
   >
     <div class="flex items-center gap-3">
       <span
-        class="text-sm"
-        :class="statusTone"
+        class="inline-flex items-center gap-2 text-sm"
         role="status"
         aria-live="polite"
         data-testid="save-status"
       >
-        {{ statusLabel }}
+        <span class="relative size-4 shrink-0">
+          <Transition
+            enter-active-class="transition-opacity duration-150"
+            leave-active-class="transition-opacity duration-150 absolute inset-0"
+            enter-from-class="opacity-0"
+            leave-to-class="opacity-0"
+            mode="out-in"
+          >
+            <Check
+              v-if="statusKind === 'saved'"
+              key="saved"
+              class="size-4 text-primary"
+              aria-hidden="true"
+            />
+            <Loader2
+              v-else-if="statusKind === 'saving'"
+              key="saving"
+              class="size-4 animate-spin text-muted-fg"
+              aria-hidden="true"
+            />
+            <AlertCircle
+              v-else-if="statusKind === 'failed'"
+              key="failed"
+              class="size-4 text-danger"
+              aria-hidden="true"
+            />
+            <Circle
+              v-else-if="statusKind === 'unsaved'"
+              key="unsaved"
+              class="size-4 text-warning"
+              aria-hidden="true"
+            />
+            <Circle
+              v-else
+              key="new"
+              class="size-4 text-muted-fg"
+              aria-hidden="true"
+            />
+          </Transition>
+        </span>
+        <span
+          :class="{
+            'text-danger-fg': statusKind === 'failed',
+            'text-muted-fg': statusKind !== 'failed',
+          }"
+        >
+          {{ statusLabel }}
+        </span>
       </span>
-      <button
+      <Button
         v-if="saveStatus === 'failed'"
-        type="button"
-        class="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+        variant="secondary"
+        size="sm"
         @click="props.onSave()"
       >
         Retry
-      </button>
+      </Button>
     </div>
 
     <div class="flex items-center gap-3">
-      <label class="inline-flex items-center gap-2 text-sm text-neutral-700">
+      <label class="inline-flex items-center gap-2 text-sm text-fg">
         <input
           type="checkbox"
           :checked="autosaveEnabled"
@@ -93,15 +125,15 @@ const statusTone = computed(() => {
         />
         Autosave
       </label>
-      <button
-        type="button"
-        class="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+      <Button
+        variant="primary"
+        size="sm"
         :disabled="!isDirty"
-        @click="props.onSave()"
         data-testid="save-button"
+        @click="props.onSave()"
       >
         Save
-      </button>
+      </Button>
     </div>
   </header>
 </template>
