@@ -4,7 +4,7 @@
 
 **Blocked by:** 06, 08, 09, 10, 11.
 
-**Status:** ready-for-agent
+**Status:** wontfix
 
 - [ ] Playwright is set up in the monorepo with a documented `pnpm test:e2e` command that boots both apps in test mode
 - [ ] Test: create a new form, add one field of each of the five types, edit labels and options, wait for autosave, refresh the page, and verify all changes are still there
@@ -14,3 +14,7 @@
 - [ ] Test: reorder a field using only the keyboard, verify the new order persists after autosave + refresh
 - [ ] If ticket 12 has landed: a test covering conditional visibility (setting a rule, verifying the target shows/hides, verifying the answer clears on hide, verifying validation skips it)
 - [ ] Tests use a separate SQLite database file so they do not stomp on dev data
+
+## Comments
+
+- Out of scope for this effort. Left as `wontfix` so agents do not pick it up.
