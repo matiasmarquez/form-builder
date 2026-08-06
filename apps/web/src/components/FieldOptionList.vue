@@ -17,9 +17,10 @@ const optionIds = computed<string[]>(() => {
   return field.options.map((o) => o.id);
 });
 
-const { parentRef, ids, moveByKeyboard } = useReorderableList({
+const { parentRef, ids, moveByKeyboard, onHandleMouseDown } = useReorderableList({
   source: () => optionIds.value,
   commit: (newOrder) => store.reorderFieldOptions(props.fieldId, newOrder),
+  dragHandle: '[data-option-handle]',
 });
 
 function findOption(id: string): FieldOption | undefined {
@@ -75,6 +76,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
       <button
         type="button"
         :data-option-handle="optionId"
+        @mousedown="onHandleMouseDown"
         @keydown="onHandleKeydown($event, optionId)"
         class="cursor-grab text-neutral-400 hover:text-neutral-700 focus:text-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 rounded px-1"
         :aria-label="`Reorder option ${optionIndex(optionId) + 1}. Use arrow up and down to move.`"

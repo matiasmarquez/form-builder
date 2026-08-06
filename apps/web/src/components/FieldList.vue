@@ -9,9 +9,10 @@ const store = useEditorStore();
 
 const fieldIds = computed<string[]>(() => store.template?.fields.map((f) => f.id) ?? []);
 
-const { parentRef, ids, moveByKeyboard } = useReorderableList({
+const { parentRef, ids, moveByKeyboard, onHandleMouseDown } = useReorderableList({
   source: () => fieldIds.value,
   commit: (newOrder) => store.reorderFields(newOrder),
+  dragHandle: '[data-field-handle]',
 });
 
 function findField(id: string): Field | undefined {
@@ -68,6 +69,7 @@ function fieldTypeLabel(type: Field['type']): string {
             <button
               type="button"
               :data-field-handle="fieldId"
+              @mousedown="onHandleMouseDown"
               @keydown="onHandleKeydown($event, fieldId)"
               class="cursor-grab text-neutral-400 hover:text-neutral-700 focus:text-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 rounded px-1 mt-1"
               :aria-label="`Reorder field ${findField(fieldId)!.label || 'untitled'}. Use arrow up and down to move.`"

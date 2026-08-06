@@ -10,6 +10,10 @@ import { useDragAndDrop } from '@formkit/drag-and-drop/vue';
 // The caller is responsible for turning the final ids order into a store
 // mutation via `commit` (fired on `onDragend` iff the order changed).
 //
+// `dragHandle` is required: without it every list item stays `draggable`, so
+// nested lists (field options inside fields) steal or escalate to the parent
+// drag, and interactive children fight the native drag gesture.
+//
 // A companion `moveByKeyboard(id, direction)` returns the destination index
 // after moving `id` up or down by one and commits immediately. Callers use
 // this to expose an ArrowUp/ArrowDown affordance on a drag handle so the
@@ -17,11 +21,14 @@ import { useDragAndDrop } from '@formkit/drag-and-drop/vue';
 export function useReorderableList(options: {
   source: () => string[];
   commit: (newOrder: string[]) => void;
+  /** CSS selector matching the grab handle inside each list item. */
+  dragHandle: string;
 }) {
   const isDragging = ref(false);
   let startSnapshot: string[] = [];
 
   const [parentRef, ids] = useDragAndDrop<string>(options.source(), {
+    dragHandle: options.dragHandle,
     // The library relies on the DOM matching the values ref on drop. We
     // deliberately don't touch the store during the drag; the commit happens
     // in `onDragend` so a gesture that ends where it started is a no-op.
@@ -70,5 +77,25 @@ export function useReorderableList(options: {
     return to;
   }
 
-  return { parentRef: parentRef as Ref<HTMLElement | undefined>, ids, moveByKeyboard };
+  // FormKit listens for focus on the list item (capture) and clears
+  // `draggable` when a nested control focuses — which buttons do on
+  // mousedown. That races ahead of native dragstart. Re-apply after the
+  // focus handler so a <button> handle still starts a drag. Do not call
+  // preventDefault on mousedown: that also cancels native drag.
+  function onHandleMouseDown(event: MouseEvent): void {
+    const item = (event.currentTarget as HTMLElement).closest('li');
+    if (!item) return;
+    // setTimeout(0) runs after mousedown's default focus action; a microtask
+    // can still lose the race in some browsers.
+    window.setTimeout(() => {
+      item.draggable = true;
+    }, 0);
+  }
+
+  return {
+    parentRef: parentRef as Ref<HTMLElement | undefined>,
+    ids,
+    moveByKeyboard,
+    onHandleMouseDown,
+  };
 }
