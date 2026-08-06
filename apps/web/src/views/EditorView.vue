@@ -86,13 +86,11 @@ watch(
 </script>
 
 <template>
-  <div class="editor-dot-grid min-h-screen px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24">
+  <div
+    class="editor-dot-grid min-h-screen px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24"
+  >
     <section v-if="template" class="mx-auto max-w-5xl space-y-4">
       <EditorToolbar />
-
-      <Card class="p-4 sm:px-5 sm:py-4">
-        <EditorHeader :on-save="saveNow" />
-      </Card>
 
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
         <Card class="w-full shrink-0 p-4 lg:sticky lg:top-24 lg:w-56">
@@ -100,6 +98,9 @@ watch(
         </Card>
 
         <Card class="min-w-0 flex-1 space-y-6 p-5 sm:p-6">
+          <div class="bg-surface/20 px-3 py-2 rounded-xl">
+            <EditorHeader :on-save="saveNow" />
+          </div>
           <div class="space-y-2">
             <TextInput
               variant="inline-borderless"

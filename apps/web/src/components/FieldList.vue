@@ -161,7 +161,9 @@ function requiredInputId(fieldId: string): string {
             :inert="isExpanded(fieldId)"
           >
             <div class="overflow-hidden">
-              <div class="relative flex items-center gap-2 px-3 py-2.5 pl-10 md:pl-3">
+              <div
+                class="relative flex items-center gap-2 px-3 py-2.5 pl-10 md:pl-3"
+              >
                 <button
                   type="button"
                   :data-field-handle="fieldId"
@@ -172,10 +174,7 @@ function requiredInputId(fieldId: string): string {
                   @mousedown="onHandleMouseDown"
                   @keydown="onHandleKeydown($event, fieldId)"
                 >
-                  <GripVertical
-                    class="size-5 opacity-30"
-                    aria-hidden="true"
-                  />
+                  <GripVertical class="size-5 opacity-30" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -218,10 +217,7 @@ function requiredInputId(fieldId: string): string {
                       }}</span>
                       <span class="sr-only"> options</span>
                     </Badge>
-                    <span
-                      v-if="findField(fieldId)!.required"
-                      class="sr-only"
-                    >
+                    <span v-if="findField(fieldId)!.required" class="sr-only">
                       Required.
                     </span>
                     <Asterisk
@@ -237,6 +233,7 @@ function requiredInputId(fieldId: string): string {
                   icon-only
                   size="sm"
                   :aria-label="`Edit field ${findField(fieldId)!.label || 'untitled'}`"
+                  class="text-muted-fg/80 hover:text-fg"
                   @click.stop="expand(fieldId)"
                 >
                   <Pencil class="size-4" aria-hidden="true" />
@@ -245,7 +242,7 @@ function requiredInputId(fieldId: string): string {
                   variant="ghost"
                   icon-only
                   size="sm"
-                  class="text-danger hover:text-danger"
+                  class="text-muted-fg/80! hover:text-danger!"
                   :aria-label="`Delete field ${findField(fieldId)!.label || 'untitled'}`"
                   @click.stop="store.deleteField(fieldId)"
                 >
