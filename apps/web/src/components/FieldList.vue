@@ -141,6 +141,7 @@ function bodyId(fieldId: string): string {
           <div
             class="grid transition-[grid-template-rows] duration-200 ease-out"
             :style="{ gridTemplateRows: isExpanded(fieldId) ? '0fr' : '1fr' }"
+            :inert="isExpanded(fieldId)"
           >
             <div class="overflow-hidden">
               <div class="flex items-center gap-2 px-3 py-2.5 pl-10 md:pl-3">
@@ -154,13 +155,16 @@ function bodyId(fieldId: string): string {
                   <button
                     type="button"
                     :data-field-handle="fieldId"
-                    class="inline-flex cursor-grab rounded px-1 text-muted-fg hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:static opacity-30"
+                    class="inline-flex cursor-grab rounded border-border text-muted-fg hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:static"
                     :aria-label="`Reorder field ${findField(fieldId)!.label || 'untitled'}. Use arrow up and down to move.`"
                     aria-keyshortcuts="ArrowUp ArrowDown"
                     @mousedown="onHandleMouseDown"
                     @keydown="onHandleKeydown($event, fieldId)"
                   >
-                    <GripVertical class="size-5" aria-hidden="true" />
+                    <GripVertical
+                      class="size-5 opacity-30"
+                      aria-hidden="true"
+                    />
                   </button>
                   <component
                     :is="fieldTypeIcon(findField(fieldId)!.type)"
@@ -225,6 +229,7 @@ function bodyId(fieldId: string): string {
             :id="bodyId(fieldId)"
             class="grid transition-[grid-template-rows] duration-200 ease-out"
             :style="{ gridTemplateRows: isExpanded(fieldId) ? '1fr' : '0fr' }"
+            :inert="!isExpanded(fieldId)"
           >
             <div class="overflow-hidden">
               <div class="space-y-3 px-3 py-3 pl-10 md:p-4">
