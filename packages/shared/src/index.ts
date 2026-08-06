@@ -99,3 +99,73 @@ export const templateListItemSchema = z.object({
 export type TemplateListItem = z.infer<typeof templateListItemSchema>;
 
 export const templateListSchema = z.array(templateListItemSchema);
+
+// --- Runtime: FormResponse / Answer ---
+
+export const REQUIRED_FIELD_MESSAGE = 'This field is required';
+
+/** Free-text answer for `text` / `paragraph` fields. */
+export type TextAnswer = string;
+/** Single-option answer for `radio` / `select` fields. */
+export type SingleOptionAnswer = OptionId;
+/** Multi-option answer for `checkbox` fields. */
+export type MultiOptionAnswer = OptionId[];
+
+export type Answer = TextAnswer | SingleOptionAnswer | MultiOptionAnswer;
+
+export const formResponseSchema = z.object({
+  templateId: z.string(),
+  answers: z.record(z.union([z.string(), z.array(z.string())])),
+});
+export type FormResponse = z.infer<typeof formResponseSchema>;
+
+export type FieldErrors = Record<FieldId, string>;
+
+function isEmptyAnswer(field: Field, answer: Answer | undefined): boolean {
+  if (answer === undefined) return true;
+  switch (field.type) {
+    case 'text':
+    case 'paragraph':
+      return typeof answer !== 'string' || answer.trim() === '';
+    case 'radio':
+    case 'select':
+      return typeof answer !== 'string' || answer === '';
+    case 'checkbox':
+      return !Array.isArray(answer) || answer.length === 0;
+  }
+}
+
+function hasInvalidOptionMembership(field: Field, answer: Answer | undefined): boolean {
+  if (field.type !== 'checkbox' && field.type !== 'radio' && field.type !== 'select') {
+    return false;
+  }
+  const validIds = new Set(field.options.map((o) => o.id));
+  if (field.type === 'checkbox') {
+    if (!Array.isArray(answer)) return false;
+    return answer.some((id) => !validIds.has(id));
+  }
+  if (typeof answer !== 'string' || answer === '') return false;
+  return !validIds.has(answer);
+}
+
+/**
+ * Validate a `FormResponse` against its `FormTemplate`.
+ *
+ * Returns a map of `FieldId` → error message for every invalid field.
+ * Every field in the template is checked (visibility filtering is ticket 12).
+ */
+export function validateFormResponse(
+  template: FormTemplate,
+  response: FormResponse,
+): FieldErrors {
+  const errors: FieldErrors = {};
+  for (const field of template.fields) {
+    const answer = response.answers[field.id];
+    const empty = isEmptyAnswer(field, answer);
+    const badMembership = hasInvalidOptionMembership(field, answer);
+    if ((field.required && empty) || badMembership) {
+      errors[field.id] = REQUIRED_FIELD_MESSAGE;
+    }
+  }
+  return errors;
+}
