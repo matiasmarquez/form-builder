@@ -1,17 +1,33 @@
 import { defineStore } from 'pinia';
-import type {
-  CheckboxField,
-  Field,
-  FieldId,
-  FieldOption,
-  FormTemplate,
-  OptionId,
-  ParagraphField,
-  RadioField,
-  SelectField,
-  TextField,
+import {
+  detectVisibilityCycle,
+  type CheckboxField,
+  type Field,
+  type FieldId,
+  type FieldOption,
+  type FormTemplate,
+  type OptionId,
+  type ParagraphField,
+  type RadioField,
+  type SelectField,
+  type TextField,
+  type VisibilityRule,
 } from '@form-builder/shared';
 import { changedFieldIds } from '../lib/changed-field-ids.ts';
+
+/**
+ * Thrown by `save()` when the template's visibility rule graph contains a
+ * cycle. The template is not persisted; the caller (autosave / manual save)
+ * should surface the message to the user.
+ */
+export class VisibilityCycleError extends Error {
+  constructor(public readonly fieldIds: readonly FieldId[]) {
+    super(
+      `Cannot save: conditional visibility rules form a cycle (${fieldIds.join(' → ')}).`,
+    );
+    this.name = 'VisibilityCycleError';
+  }
+}
 
 // Field variants that carry an `options: FieldOption[]` array. Kept as a
 // TS-only alias so the runtime discriminated union stays authoritative in
@@ -468,6 +484,26 @@ export const useEditorStore = defineStore('editor', {
       this.template!.updatedAt = Date.now();
     },
 
+    // Attach (or replace) a `VisibilityRule` on a field. The editor exposes
+    // one rule per field — the runtime layer (preview store) evaluates it as
+    // a fixed point across the whole template. Save is refused if the
+    // resulting rule graph contains a cycle (`VisibilityCycleError`).
+    setFieldVisibility(fieldId: FieldId, rule: VisibilityRule): void {
+      const field = this.findField(fieldId);
+      if (!field) return;
+      this.beginStep(null);
+      field.visibility = rule;
+      this.template!.updatedAt = Date.now();
+    },
+
+    clearFieldVisibility(fieldId: FieldId): void {
+      const field = this.findField(fieldId);
+      if (!field || !field.visibility) return;
+      this.beginStep(null);
+      delete field.visibility;
+      this.template!.updatedAt = Date.now();
+    },
+
     setFieldRequired(fieldId: FieldId, required: boolean): void {
       const field = this.findField(fieldId);
       if (!field || field.required === required) return;
@@ -550,6 +586,17 @@ export const useEditorStore = defineStore('editor', {
         throw new Error('No save transport configured (call setTemplateSaveTransport in main.ts)');
       }
       if (!this.isDirty && this.isPersisted) return;
+
+      // ADR-0005: refuse to persist a template whose visibility rule graph
+      // contains a cycle. Detect before the request so the failure is
+      // synchronous and does not depend on the API implementation.
+      const cycle = detectVisibilityCycle(this.template);
+      if (cycle) {
+        const err = new VisibilityCycleError(cycle.fieldIds);
+        this.saveStatus = 'failed';
+        this.lastSaveError = err.message;
+        throw err;
+      }
 
       const wasPersisted = this.isPersisted;
       const snapshot = cloneTemplate(this.template);

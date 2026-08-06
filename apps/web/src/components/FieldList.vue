@@ -16,6 +16,7 @@ import { useReorderableList } from "../composables/useReorderableList.ts";
 import { fieldTypeIcon, fieldTypeLabel } from "../lib/field-type-meta.ts";
 import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 import FieldOptionList from "./FieldOptionList.vue";
+import FieldVisibilityEditor from "./FieldVisibilityEditor.vue";
 import Badge from "./ui/Badge.vue";
 import Button from "./ui/Button.vue";
 import TextInput from "./ui/TextInput.vue";
@@ -417,6 +418,8 @@ function requiredInputId(fieldId: string): string {
                     </Button>
                   </div>
                 </template>
+
+                <FieldVisibilityEditor :field-id="fieldId" />
 
                 <div class="flex justify-end">
                   <Button

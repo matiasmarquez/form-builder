@@ -155,7 +155,7 @@ watch(
 
         <div v-else class="space-y-8">
           <PreviewField
-            v-for="field in template.fields"
+            v-for="field in store.visibleFields"
             :key="field.id"
             :field="field"
           />

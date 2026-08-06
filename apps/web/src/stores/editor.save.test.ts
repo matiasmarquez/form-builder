@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import {
   setTemplateSaveTransport,
   useEditorStore,
+  VisibilityCycleError,
   type TemplateSaveTransport,
 } from './editor.ts';
 
@@ -168,6 +169,39 @@ describe('editor store — save', () => {
     expect(store.isPersisted).toBe(true);
     expect(store.isDirty).toBe(true);
     expect(store.saveStatus).toBe('saved');
+  });
+
+  it('refuses to save a template whose visibility rules form a cycle', async () => {
+    const transport = makeTransport();
+    setTemplateSaveTransport(transport);
+    const store = useEditorStore();
+    store.initializeTemplate('t1');
+    const aId = store.addRadioField()!;
+    const bId = store.addRadioField()!;
+    // Build a 2-node cycle: each field's visibility points at the other.
+    // The option ids don't matter for cycle detection.
+    const aOption = store.template!.fields.find((f) => f.id === aId)! as {
+      options: { id: string }[];
+    };
+    const bOption = store.template!.fields.find((f) => f.id === bId)! as {
+      options: { id: string }[];
+    };
+    store.setFieldVisibility(aId, {
+      sourceFieldId: bId,
+      condition: { kind: 'equals', optionId: bOption.options[0]!.id },
+    });
+    store.setFieldVisibility(bId, {
+      sourceFieldId: aId,
+      condition: { kind: 'equals', optionId: aOption.options[0]!.id },
+    });
+
+    await expect(store.save()).rejects.toBeInstanceOf(VisibilityCycleError);
+    expect(transport.createCalls).toBe(0);
+    expect(transport.updateCalls).toBe(0);
+    expect(store.saveStatus).toBe('failed');
+    expect(store.lastSaveError).toMatch(/cycle/i);
+    expect(store.isPersisted).toBe(false);
+    expect(store.isDirty).toBe(true);
   });
 
   it('undo/redo flip isDirty even when they return to a previously saved state', async () => {

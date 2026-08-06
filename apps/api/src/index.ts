@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { formTemplateSchema } from '@form-builder/shared';
+import { detectVisibilityCycle, formTemplateSchema } from '@form-builder/shared';
 import { openDatabase } from './db.ts';
 import {
   DuplicateTemplateIdError,
@@ -34,6 +34,13 @@ app.post('/templates', async (c) => {
   if (!parsed.success) {
     return c.json({ error: 'Invalid payload', issues: parsed.error.issues }, 400);
   }
+  const cycle = detectVisibilityCycle(parsed.data);
+  if (cycle) {
+    return c.json(
+      { error: 'Visibility rule cycle', fieldIds: cycle.fieldIds },
+      400,
+    );
+  }
   try {
     const created = templates.create(parsed.data);
     return c.json(created, 201);
@@ -54,6 +61,13 @@ app.put('/templates/:id', async (c) => {
   }
   if (parsed.data.id !== id) {
     return c.json({ error: 'Path id and body id must match' }, 400);
+  }
+  const cycle = detectVisibilityCycle(parsed.data);
+  if (cycle) {
+    return c.json(
+      { error: 'Visibility rule cycle', fieldIds: cycle.fieldIds },
+      400,
+    );
   }
   const replaced = templates.replace(parsed.data);
   return c.json(replaced);

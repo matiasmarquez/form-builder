@@ -152,14 +152,18 @@ function hasInvalidOptionMembership(field: Field, answer: Answer | undefined): b
  * Validate a `FormResponse` against its `FormTemplate`.
  *
  * Returns a map of `FieldId` → error message for every invalid field.
- * Every field in the template is checked (visibility filtering is ticket 12).
+ * When `visibleFieldIds` is provided, fields not in the set are skipped —
+ * hidden fields are excluded from validation even when `required` is true
+ * (ADR-0005).
  */
 export function validateFormResponse(
   template: FormTemplate,
   response: FormResponse,
+  visibleFieldIds?: ReadonlySet<FieldId>,
 ): FieldErrors {
   const errors: FieldErrors = {};
   for (const field of template.fields) {
+    if (visibleFieldIds && !visibleFieldIds.has(field.id)) continue;
     const answer = response.answers[field.id];
     const empty = isEmptyAnswer(field, answer);
     const badMembership = hasInvalidOptionMembership(field, answer);
@@ -168,4 +172,113 @@ export function validateFormResponse(
     }
   }
   return errors;
+}
+
+// --- Visibility (ADR-0005) ---
+
+/**
+ * Evaluate a single `VisibilityRule` against the current answers map.
+ * Missing source answers evaluate to false ("not yet matched"), which is
+ * what the fixed-point iteration relies on to converge on empty state.
+ */
+export function evaluateVisibilityRule(
+  rule: VisibilityRule,
+  answers: FormResponse['answers'],
+): boolean {
+  const src = answers[rule.sourceFieldId];
+  if (src === undefined) return false;
+  switch (rule.condition.kind) {
+    case 'equals':
+      return typeof src === 'string' && src === rule.condition.optionId;
+    case 'includes':
+      return Array.isArray(src) && src.includes(rule.condition.optionId);
+  }
+}
+
+/**
+ * Compute the set of currently-visible field ids by fixed-point iteration.
+ *
+ * A field with no rule is always visible. A field with a rule is visible iff
+ * (a) the source field is currently visible AND (b) the rule evaluates true
+ * against `answers`. Re-evaluated until stable so that cascading rules
+ * converge — a hidden gate hides everything downstream.
+ *
+ * Assumes the rule graph is acyclic. Callers should run
+ * `detectVisibilityCycle` at save time to keep this precondition true.
+ */
+export function computeVisibleFieldIds(
+  template: FormTemplate,
+  answers: FormResponse['answers'],
+): Set<FieldId> {
+  const visible = new Set<FieldId>(template.fields.map((f) => f.id));
+  // Fixed-point: bounded by fields.length because each pass removes at
+  // least one id or terminates. Extra +1 as a safety belt.
+  const cap = template.fields.length + 1;
+  for (let i = 0; i < cap; i++) {
+    let changed = false;
+    for (const field of template.fields) {
+      if (!visible.has(field.id)) continue;
+      const rule = field.visibility;
+      if (!rule) continue;
+      const sourceVisible = visible.has(rule.sourceFieldId);
+      const passes = sourceVisible && evaluateVisibilityRule(rule, answers);
+      if (!passes) {
+        visible.delete(field.id);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  return visible;
+}
+
+export interface VisibilityCycle {
+  fieldIds: FieldId[];
+}
+
+/**
+ * Detect a cycle in the visibility rule graph. Returns the first cycle
+ * found (as the list of field ids on it) or `null` if the graph is a DAG.
+ * Rules that reference an unknown source field are treated as leaves — they
+ * cannot participate in a cycle. Save-time cycle detection lives here so
+ * the API and the editor share the same rejection semantics.
+ */
+export function detectVisibilityCycle(template: FormTemplate): VisibilityCycle | null {
+  const byId = new Map(template.fields.map((f) => [f.id, f] as const));
+
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map<FieldId, number>();
+  for (const f of template.fields) color.set(f.id, WHITE);
+
+  const stack: FieldId[] = [];
+
+  function visit(id: FieldId): VisibilityCycle | null {
+    const c = color.get(id);
+    if (c === BLACK) return null;
+    if (c === GRAY) {
+      const cycleStart = stack.indexOf(id);
+      return { fieldIds: stack.slice(cycleStart >= 0 ? cycleStart : 0).concat(id) };
+    }
+    color.set(id, GRAY);
+    stack.push(id);
+    const field = byId.get(id);
+    const source = field?.visibility?.sourceFieldId;
+    if (source && byId.has(source)) {
+      const c2 = visit(source);
+      if (c2) return c2;
+    }
+    stack.pop();
+    color.set(id, BLACK);
+    return null;
+  }
+
+  for (const f of template.fields) {
+    if (color.get(f.id) === WHITE) {
+      const cycle = visit(f.id);
+      if (cycle) return cycle;
+    }
+  }
+  return null;
 }

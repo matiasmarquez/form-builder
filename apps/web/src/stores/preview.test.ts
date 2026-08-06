@@ -116,6 +116,176 @@ describe('preview store', () => {
     expect(store.fieldErrors.f1).toBe(REQUIRED_MSG);
   });
 
+  describe('visibility (ADR-0005)', () => {
+    function templateWithGate(): FormTemplate {
+      return {
+        id: 't1',
+        title: 'Gated',
+        description: '',
+        fields: [
+          {
+            id: 'gate',
+            type: 'radio',
+            label: 'Own a pet?',
+            required: true,
+            options: [
+              { id: 'yes', label: 'Yes' },
+              { id: 'no', label: 'No' },
+            ],
+          },
+          {
+            id: 'name',
+            type: 'text',
+            label: 'Pet name',
+            required: true,
+            visibility: {
+              sourceFieldId: 'gate',
+              condition: { kind: 'equals', optionId: 'yes' },
+            },
+          },
+        ],
+        createdAt: 0,
+        updatedAt: 0,
+      };
+    }
+
+    it('hides a gated field until the gate matches, and lists only visible fields', () => {
+      const store = usePreviewStore();
+      store.loadTemplate(templateWithGate());
+
+      expect(store.visibleFieldIds.has('name')).toBe(false);
+      expect(store.visibleFields.map((f) => f.id)).toEqual(['gate']);
+
+      store.setAnswer('gate', 'yes');
+
+      expect(store.visibleFieldIds.has('name')).toBe(true);
+      expect(store.visibleFields.map((f) => f.id)).toEqual(['gate', 'name']);
+    });
+
+    it('clears a hidden field answer when the gate flips', () => {
+      const store = usePreviewStore();
+      store.loadTemplate(templateWithGate());
+      store.setAnswer('gate', 'yes');
+      store.setAnswer('name', 'Fido');
+      expect(store.answers.name).toBe('Fido');
+
+      store.setAnswer('gate', 'no');
+
+      expect(store.visibleFieldIds.has('name')).toBe(false);
+      expect(store.answers.name).toBe('');
+    });
+
+    it('cascades: a hidden gate hides its dependants and clears their answers', () => {
+      const template: FormTemplate = {
+        id: 't1',
+        title: '',
+        description: '',
+        fields: [
+          {
+            id: 'g1',
+            type: 'radio',
+            label: '',
+            required: false,
+            options: [
+              { id: 'yes', label: '' },
+              { id: 'no', label: '' },
+            ],
+          },
+          {
+            id: 'g2',
+            type: 'radio',
+            label: '',
+            required: false,
+            options: [
+              { id: 'go', label: '' },
+              { id: 'stop', label: '' },
+            ],
+            visibility: {
+              sourceFieldId: 'g1',
+              condition: { kind: 'equals', optionId: 'yes' },
+            },
+          },
+          {
+            id: 'leaf',
+            type: 'text',
+            label: '',
+            required: false,
+            visibility: {
+              sourceFieldId: 'g2',
+              condition: { kind: 'equals', optionId: 'go' },
+            },
+          },
+        ],
+        createdAt: 0,
+        updatedAt: 0,
+      };
+      const store = usePreviewStore();
+      store.loadTemplate(template);
+      store.setAnswer('g1', 'yes');
+      store.setAnswer('g2', 'go');
+      store.setAnswer('leaf', 'hello');
+      expect(store.visibleFieldIds.has('leaf')).toBe(true);
+
+      store.setAnswer('g1', 'no');
+
+      expect(store.visibleFieldIds.has('g2')).toBe(false);
+      expect(store.visibleFieldIds.has('leaf')).toBe(false);
+      expect(store.answers.g2).toBe('');
+      expect(store.answers.leaf).toBe('');
+    });
+
+    it('excludes hidden required fields from submit validation', () => {
+      const store = usePreviewStore();
+      store.loadTemplate(templateWithGate());
+      // gate answered 'no' → name hidden. gate itself is required.
+      store.setAnswer('gate', 'no');
+
+      const ok = store.submit();
+
+      expect(ok).toBe(true);
+      expect(store.fieldErrors).toEqual({});
+    });
+
+    it('supports "includes" on checkbox source fields', () => {
+      const template: FormTemplate = {
+        id: 't1',
+        title: '',
+        description: '',
+        fields: [
+          {
+            id: 'tags',
+            type: 'checkbox',
+            label: '',
+            required: false,
+            options: [
+              { id: 'a', label: '' },
+              { id: 'b', label: '' },
+            ],
+          },
+          {
+            id: 'detail',
+            type: 'text',
+            label: '',
+            required: false,
+            visibility: {
+              sourceFieldId: 'tags',
+              condition: { kind: 'includes', optionId: 'a' },
+            },
+          },
+        ],
+        createdAt: 0,
+        updatedAt: 0,
+      };
+      const store = usePreviewStore();
+      store.loadTemplate(template);
+      expect(store.visibleFieldIds.has('detail')).toBe(false);
+      store.setAnswer('tags', ['a']);
+      expect(store.visibleFieldIds.has('detail')).toBe(true);
+      store.setAnswer('tags', ['b']);
+      expect(store.visibleFieldIds.has('detail')).toBe(false);
+    });
+  });
+
   it('initializes checkbox answers as empty arrays', () => {
     const store = usePreviewStore();
     store.loadTemplate(
