@@ -143,7 +143,22 @@ function requiredInputId(fieldId: string): string {
 </script>
 
 <template>
-  <ul ref="parentRef" class="space-y-3" aria-label="Form fields">
+  <div
+    v-if="ids.length === 0"
+    class="rounded-md border border-dashed border-border p-8 text-center"
+  >
+    <p class="text-fg">No fields yet.</p>
+    <p class="mt-1 text-sm text-muted-fg">
+      Pick a field type from the palette to get started.
+    </p>
+  </div>
+
+  <ul
+    v-else
+    ref="parentRef"
+    class="space-y-3"
+    aria-label="Form fields"
+  >
     <template v-for="fieldId in ids" :key="fieldId">
       <li v-if="findField(fieldId)" class="relative flex items-stretch gap-2">
         <div
