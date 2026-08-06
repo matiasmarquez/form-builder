@@ -29,7 +29,9 @@ const sourceCandidates = computed<Field[]>(() => {
     .filter((f) => isChoiceField(f) && f.options.length > 0);
 });
 
-const rule = computed<VisibilityRule | undefined>(() => field.value?.visibility);
+const rule = computed<VisibilityRule | undefined>(
+  () => field.value?.visibility
+);
 
 const sourceField = computed<Field | undefined>(() => {
   if (!rule.value) return undefined;
@@ -43,8 +45,8 @@ const optionSelectId = computed(
   () => `field-${props.fieldId}-visibility-option`
 );
 
-function conditionKindFor(source: Field): 'equals' | 'includes' {
-  return source.type === 'checkbox' ? 'includes' : 'equals';
+function conditionKindFor(source: Field): "equals" | "includes" {
+  return source.type === "checkbox" ? "includes" : "equals";
 }
 
 function onEnable(): void {
@@ -86,14 +88,14 @@ function onChangeOption(event: Event): void {
 
 const relationLabel = computed(() => {
   const src = sourceField.value;
-  if (!src) return 'is';
-  return src.type === 'checkbox' ? 'includes' : 'is';
+  if (!src) return "is";
+  return src.type === "checkbox" ? "includes" : "is";
 });
 
 const selectClass = [
-  'block w-full rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-fg',
+  "block w-full rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-fg",
   FOCUS_RING_CLASSES,
-].join(' ');
+].join(" ");
 </script>
 
 <template>
@@ -139,13 +141,14 @@ const selectClass = [
         :class="selectClass"
         :value="rule.sourceFieldId"
         @change="onChangeSource"
+        class="bg-surface/20"
       >
         <option
           v-for="candidate in sourceCandidates"
           :key="candidate.id"
           :value="candidate.id"
         >
-          {{ candidate.label || 'Untitled field' }}
+          {{ candidate.label || "Untitled field" }}
         </option>
       </select>
 
@@ -157,13 +160,14 @@ const selectClass = [
         :class="selectClass"
         :value="rule.condition.optionId"
         @change="onChangeOption"
+        class="bg-surface/20"
       >
         <option
           v-for="opt in sourceField.options"
           :key="opt.id"
           :value="opt.id"
         >
-          {{ opt.label || 'Untitled option' }}
+          {{ opt.label || "Untitled option" }}
         </option>
       </select>
     </div>
