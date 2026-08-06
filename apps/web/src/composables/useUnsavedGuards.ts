@@ -9,8 +9,8 @@ export function useUnsavedGuards(): void {
 
   function onBeforeUnload(event: BeforeUnloadEvent): void {
     if (!editor.isDirty) return;
-    // Setting returnValue is the modern way; some browsers still require
-    // both preventDefault and a non-empty returnValue for the prompt.
+    // some browsers still require both preventDefault 
+    // and a non-empty returnValue for the prompt.
     event.preventDefault();
     event.returnValue = '';
   }
