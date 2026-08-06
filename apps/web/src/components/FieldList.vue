@@ -242,7 +242,7 @@ function requiredInputId(fieldId: string): string {
                   variant="ghost"
                   icon-only
                   size="sm"
-                  class="text-muted-fg/80! hover:text-danger!"
+                  class="text-muted-fg/80 hover:text-danger"
                   :aria-label="`Delete field ${findField(fieldId)!.label || 'untitled'}`"
                   @click.stop="store.deleteField(fieldId)"
                 >

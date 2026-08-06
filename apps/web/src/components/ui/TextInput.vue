@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue';
-import { FOCUS_RING_CLASSES } from '../../lib/focus-ring.ts';
+import { cn } from '../../lib/cn.ts';
+import {
+  textControlVariants,
+  type TextControlVariants,
+} from './text-control-variants.ts';
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'bordered' | 'inline-borderless';
+    variant?: NonNullable<TextControlVariants['variant']>;
     modelValue?: string;
     type?: string;
     placeholder?: string;
@@ -26,16 +30,9 @@ const emit = defineEmits<{
 
 const attrs = useAttrs();
 
-const variantClass = computed(() => {
-  if (props.variant === 'inline-borderless') {
-    return [
-      'border-0 bg-transparent shadow-none cursor-text',
-      'hover:bg-surface-hover',
-      'focus-visible:bg-surface-hover',
-    ].join(' ');
-  }
-  return 'border border-border-strong bg-surface-elevated';
-});
+const classes = computed(() =>
+  cn(textControlVariants({ variant: props.variant }), attrs.class as string | undefined),
+);
 
 function onInput(event: Event): void {
   emit('update:modelValue', (event.target as HTMLInputElement).value);
@@ -56,8 +53,7 @@ export default {
     :value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
-    class="w-full rounded-md px-3 py-2 text-sm leading-relaxed text-fg placeholder:text-muted-fg disabled:opacity-40"
-    :class="[FOCUS_RING_CLASSES, variantClass, attrs.class]"
+    :class="classes"
     v-bind="{ ...attrs, class: undefined }"
     @input="onInput"
     @blur="emit('blur', $event)"
