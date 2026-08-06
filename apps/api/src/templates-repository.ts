@@ -1,11 +1,5 @@
 import type Database from 'better-sqlite3';
-import type { Field, FormTemplate } from '@form-builder/shared';
-
-export interface TemplateListItem {
-  id: string;
-  title: string;
-  updatedAt: number;
-}
+import type { Field, FormTemplate, TemplateListItem } from '@form-builder/shared';
 
 interface TemplateRow {
   id: string;

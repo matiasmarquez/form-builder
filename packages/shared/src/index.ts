@@ -87,3 +87,15 @@ export const formTemplateSchema = z.object({
   updatedAt: z.number(),
 });
 export type FormTemplate = z.infer<typeof formTemplateSchema>;
+
+// Row shape returned by `GET /templates`. Intentionally narrower than
+// `FormTemplate`: the list view only needs the label + timestamp to render
+// each entry, so the API doesn't ship the (potentially large) `fields` blob.
+export const templateListItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  updatedAt: z.number(),
+});
+export type TemplateListItem = z.infer<typeof templateListItemSchema>;
+
+export const templateListSchema = z.array(templateListItemSchema);
