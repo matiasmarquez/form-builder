@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import type { TemplateListItem } from '@form-builder/shared';
-import { deleteTemplate, fetchTemplateList } from '../api.ts';
+import { createTemplate, deleteTemplate, fetchTemplate, fetchTemplateList } from '../api.ts';
+import { duplicateTemplate } from '../duplicate.ts';
 
 const router = useRouter();
 
@@ -22,6 +23,11 @@ const confirmingId = ref<string | null>(null);
 // Rows whose DELETE request is in flight; the button is disabled to prevent
 // double-fires and the row stays visible until the request settles.
 const deletingIds = ref<Set<string>>(new Set());
+// Rows whose Duplicate request is in flight. Symmetrical with `deletingIds`
+// — same reason (disable the trigger and surface a spinner label).
+const duplicatingIds = ref<Set<string>>(new Set());
+const duplicateErrorMessage = ref<string | null>(null);
+const duplicateErrorId = ref<string | null>(null);
 
 // Sort by updatedAt desc. The API already returns rows in that order, but
 // sorting client-side too keeps the list stable if a delete or a future
@@ -79,6 +85,26 @@ async function confirmDelete(id: string): Promise<void> {
     deleteErrorId.value = id;
   } finally {
     deletingIds.value.delete(id);
+  }
+}
+
+async function duplicate(id: string): Promise<void> {
+  duplicatingIds.value.add(id);
+  duplicateErrorMessage.value = null;
+  duplicateErrorId.value = null;
+  try {
+    const source = await fetchTemplate(id);
+    const copy = duplicateTemplate(source);
+    await createTemplate(copy);
+    templates.value = [
+      ...templates.value,
+      { id: copy.id, title: copy.title, updatedAt: copy.updatedAt },
+    ];
+  } catch (err) {
+    duplicateErrorMessage.value = err instanceof Error ? err.message : String(err);
+    duplicateErrorId.value = id;
+  } finally {
+    duplicatingIds.value.delete(id);
   }
 }
 
@@ -178,6 +204,15 @@ onMounted(() => {
           >
             Preview
           </router-link>
+          <button
+            type="button"
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-800 hover:bg-neutral-50 disabled:opacity-60"
+            :disabled="duplicatingIds.has(t.id)"
+            :aria-label="`Duplicate ${displayTitle(t)}`"
+            @click="duplicate(t.id)"
+          >
+            {{ duplicatingIds.has(t.id) ? 'Duplicating…' : 'Duplicate' }}
+          </button>
 
           <template v-if="confirmingId === t.id">
             <span class="text-sm text-neutral-700">Delete this form?</span>
@@ -215,6 +250,13 @@ onMounted(() => {
           class="text-xs text-red-700 sm:col-span-2"
         >
           Couldn't delete this form: {{ deleteErrorMessage }}
+        </p>
+        <p
+          v-if="duplicateErrorId === t.id && duplicateErrorMessage"
+          role="alert"
+          class="text-xs text-red-700 sm:col-span-2"
+        >
+          Couldn't duplicate this form: {{ duplicateErrorMessage }}
         </p>
       </li>
     </ul>
