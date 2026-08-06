@@ -3,44 +3,85 @@ import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { Field } from '@form-builder/shared';
 import { useEditorStore } from '../stores/editor.ts';
+import { useAutosaveStore } from '../stores/autosave.ts';
+import { useAutosave } from '../composables/useAutosave.ts';
+import { useUnsavedGuards } from '../composables/useUnsavedGuards.ts';
+import { fetchTemplate, TemplateNotFoundError } from '../api.ts';
+import EditorHeader from '../components/EditorHeader.vue';
 
 const route = useRoute();
 const store = useEditorStore();
+const autosave = useAutosaveStore();
 
 const template = computed(() => store.template);
 const fields = computed<Field[]>(() => store.template?.fields ?? []);
 
-function seedFromRoute(): void {
+// Load an existing template, or fall through to a fresh unpersisted template.
+// A 404 for an unknown id is expected on the New-form path (the id is minted
+// client-side, then the first save POSTs it into existence).
+async function seedFromRoute(): Promise<void> {
   const id = String(route.params.id);
-  store.initializeTemplate(id);
+  try {
+    const existing = await fetchTemplate(id);
+    store.loadTemplate(existing);
+  } catch (err) {
+    if (err instanceof TemplateNotFoundError) {
+      store.initializeTemplate(id);
+      return;
+    }
+    throw err;
+  }
+}
+
+const { flushPending } = useAutosave();
+useUnsavedGuards();
+
+async function saveNow(): Promise<void> {
+  store.flushCoalesce();
+  try {
+    if (autosave.enabled) {
+      await flushPending();
+    } else {
+      await store.save();
+    }
+  } catch {
+    // Errors already surface via saveStatus/lastSaveError in the header.
+  }
 }
 
 // Cmd+Z / Ctrl+Z → undo, Cmd+Shift+Z / Ctrl+Shift+Z → redo.
-// The listener sits on `window` (not scoped to any input) so it fires wherever
-// focus is, matching the shortcut a form creator already expects from every
-// desktop editor.
+// Cmd+S / Ctrl+S → save immediately (force-flush any pending debounce when
+// autosave is on; direct save when autosave is off).
 function onKeydown(event: KeyboardEvent): void {
   const mod = event.metaKey || event.ctrlKey;
   if (!mod) return;
   const key = event.key.toLowerCase();
-  if (key !== 'z') return;
-  event.preventDefault();
-  store.flushCoalesce();
-  if (event.shiftKey) {
-    store.redo();
-  } else {
-    store.undo();
+  if (key === 'z') {
+    event.preventDefault();
+    store.flushCoalesce();
+    if (event.shiftKey) {
+      store.redo();
+    } else {
+      store.undo();
+    }
+    return;
+  }
+  if (key === 's') {
+    event.preventDefault();
+    void saveNow();
   }
 }
 
 onMounted(() => {
-  seedFromRoute();
+  void seedFromRoute();
   window.addEventListener('keydown', onKeydown);
 });
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown);
 });
-watch(() => route.params.id, seedFromRoute);
+watch(() => route.params.id, () => {
+  void seedFromRoute();
+});
 
 // Exhaustive human label — the `never` fallthrough forces this to be updated
 // whenever a new variant is added to the Field discriminated union.
@@ -66,6 +107,7 @@ function fieldTypeLabel(type: Field['type']): string {
 
 <template>
   <section v-if="template" class="space-y-8">
+    <EditorHeader :on-save="saveNow" />
     <header class="space-y-3 border-b border-neutral-200 pb-6">
       <label class="block">
         <span class="sr-only">Form title</span>

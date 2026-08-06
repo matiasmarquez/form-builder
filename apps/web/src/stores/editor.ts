@@ -20,6 +20,25 @@ type ChoiceField = CheckboxField | RadioField | SelectField;
 export const HISTORY_CAP = 100;
 export const COALESCE_MS = 500;
 
+// Debounce window for autosave. Single named constant so it's easy to tune;
+// starting value chosen to feel responsive without spamming the API mid-word.
+export const AUTOSAVE_DEBOUNCE_MS = 800;
+
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
+
+// Injected save transport. The store doesn't import `fetch` directly so
+// tests can substitute a fake and so the wiring lives in `main.ts`.
+export interface TemplateSaveTransport {
+  create(template: FormTemplate): Promise<void>;
+  update(template: FormTemplate): Promise<void>;
+}
+
+let saveTransport: TemplateSaveTransport | null = null;
+
+export function setTemplateSaveTransport(transport: TemplateSaveTransport | null): void {
+  saveTransport = transport;
+}
+
 export function createEmptyTemplate(id: string, now: number = Date.now()): FormTemplate {
   return {
     id,
@@ -105,6 +124,13 @@ interface EditorState {
   // flushCoalesce(), by a 500 ms typing pause, or by any mutation with a
   // different key (discrete mutations use `null`).
   coalesceKey: string | null;
+  // Has this template ever been successfully saved to the server?
+  isPersisted: boolean;
+  // Does the in-memory template differ from the last successful save?
+  isDirty: boolean;
+  saveStatus: SaveStatus;
+  lastSavedAt: number | null;
+  lastSaveError: string | null;
 }
 
 // The pending pause timer is kept off the reactive store state — it's a raw
@@ -124,20 +150,47 @@ export const useEditorStore = defineStore('editor', {
     undoStack: [],
     redoStack: [],
     coalesceKey: null,
+    isPersisted: false,
+    isDirty: false,
+    saveStatus: 'idle',
+    lastSavedAt: null,
+    lastSaveError: null,
   }),
   getters: {
     canUndo: (state) => state.undoStack.length > 0,
     canRedo: (state) => state.redoStack.length > 0,
     undoDepth: (state) => state.undoStack.length,
     redoDepth: (state) => state.redoStack.length,
+    canSave: (state) => state.isDirty,
   },
   actions: {
+    // Start a fresh, never-saved template. Used for the New-form flow.
     initializeTemplate(id: string): void {
       this.template = createEmptyTemplate(id);
       this.undoStack = [];
       this.redoStack = [];
       this.clearCoalesceTimer();
       this.coalesceKey = null;
+      this.isPersisted = false;
+      this.isDirty = false;
+      this.saveStatus = 'idle';
+      this.lastSavedAt = null;
+      this.lastSaveError = null;
+    },
+
+    // Load an existing, already-persisted template from the server. Resets
+    // history and marks the store clean.
+    loadTemplate(template: FormTemplate): void {
+      this.template = cloneTemplate(template);
+      this.undoStack = [];
+      this.redoStack = [];
+      this.clearCoalesceTimer();
+      this.coalesceKey = null;
+      this.isPersisted = true;
+      this.isDirty = false;
+      this.saveStatus = 'saved';
+      this.lastSavedAt = Date.now();
+      this.lastSaveError = null;
     },
 
     // --- history primitives ---------------------------------------------------
@@ -149,6 +202,11 @@ export const useEditorStore = defineStore('editor', {
     // window pushes.
     beginStep(coalesceKey: string | null): void {
       if (!this.template) return;
+
+      // Any user mutation makes the in-memory template diverge from the last
+      // successful save. Set this BEFORE the coalesce early-return so
+      // in-flight typing also flips the flag.
+      this.isDirty = true;
 
       if (coalesceKey !== null && coalesceKey === this.coalesceKey) {
         // Continuing an in-flight coalesced edit: refresh the pause timer, do
@@ -204,6 +262,7 @@ export const useEditorStore = defineStore('editor', {
       const step = this.undoStack.pop()!;
       this.redoStack.push({ snapshot: cloneTemplate(this.template) });
       this.template = step.snapshot;
+      this.isDirty = true;
     },
 
     redo(): void {
@@ -212,6 +271,7 @@ export const useEditorStore = defineStore('editor', {
       const step = this.redoStack.pop()!;
       this.undoStack.push({ snapshot: cloneTemplate(this.template) });
       this.template = step.snapshot;
+      this.isDirty = true;
     },
 
     // --- mutations ------------------------------------------------------------
@@ -379,7 +439,59 @@ export const useEditorStore = defineStore('editor', {
     findField(fieldId: FieldId): Field | undefined {
       return this.template?.fields.find((f) => f.id === fieldId);
     },
+
+    // --- save ----------------------------------------------------------------
+
+    // Persist the current template. Chooses POST (first save) vs PUT (updates)
+    // based on `isPersisted`. Captures the dirty flag at request start so a
+    // concurrent user edit while the request is in flight keeps `isDirty` true
+    // and the change survives the roundtrip.
+    async save(): Promise<void> {
+      if (!this.template) return;
+      if (!saveTransport) {
+        throw new Error('No save transport configured (call setTemplateSaveTransport in main.ts)');
+      }
+      if (!this.isDirty && this.isPersisted) return;
+
+      const wasPersisted = this.isPersisted;
+      const snapshot = cloneTemplate(this.template);
+      snapshot.updatedAt = Date.now();
+
+      this.saveStatus = 'saving';
+      this.lastSaveError = null;
+      try {
+        if (wasPersisted) {
+          await saveTransport.update(snapshot);
+        } else {
+          await saveTransport.create(snapshot);
+        }
+        // Only clear `isDirty` if the in-memory template hasn't changed since
+        // we snapshotted. If the user typed during the save, the diff is real
+        // and the next autosave/manual save should still fire.
+        const stillMatchesSnapshot = templatesEqual(this.template, snapshot);
+        if (stillMatchesSnapshot) {
+          this.isDirty = false;
+        }
+        this.isPersisted = true;
+        this.saveStatus = 'saved';
+        this.lastSavedAt = Date.now();
+      } catch (err) {
+        this.saveStatus = 'failed';
+        this.lastSaveError = err instanceof Error ? err.message : String(err);
+        throw err;
+      }
+    },
   },
 });
+
+// Shallow-serialised equality — the template is plain JSON, so JSON.stringify
+// is a sound structural comparison and cheap enough at editor scale.
+function templatesEqual(a: FormTemplate | null, b: FormTemplate | null): boolean {
+  if (a === null || b === null) return a === b;
+  // Ignore updatedAt when comparing — we bump it at save time so it will
+  // always differ from what the user has in memory pre-next-mutation.
+  const stripTs = (t: FormTemplate) => ({ ...t, updatedAt: 0 });
+  return JSON.stringify(stripTs(a)) === JSON.stringify(stripTs(b));
+}
 
 export type { ChoiceField };

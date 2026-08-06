@@ -1,26 +1,23 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import type { FormTemplate } from '@form-builder/shared';
-import { fetchTemplate } from '../api.ts';
+import { useRouter } from 'vue-router';
 
-const SEED_ID = 'seed-template-0001';
+const router = useRouter();
 
-const template = ref<FormTemplate | null>(null);
-const error = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    template.value = await fetchTemplate(SEED_ID);
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
-  }
-});
+function newForm(): void {
+  const id = crypto.randomUUID();
+  void router.push(`/forms/${id}/edit`);
+}
 </script>
 
 <template>
-  <section>
-    <p v-if="error" class="text-red-600" role="alert">{{ error }}</p>
-    <p v-else-if="!template" class="text-neutral-500">Loading…</p>
-    <h1 v-else class="text-3xl font-semibold tracking-tight">{{ template.title }}</h1>
+  <section class="space-y-4">
+    <h1 class="text-3xl font-semibold tracking-tight">Form builder</h1>
+    <button
+      type="button"
+      class="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+      @click="newForm"
+    >
+      + New form
+    </button>
   </section>
 </template>
