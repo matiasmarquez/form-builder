@@ -356,6 +356,76 @@ export const useEditorStore = defineStore('editor', {
       return field.id;
     },
 
+    // Move `fieldId` to index `toIndex` in the template's field list. No-ops
+    // if the field is already there — an ADR-0003 reorder that ends where it
+    // started must not push a HistoryStep.
+    moveField(fieldId: FieldId, toIndex: number): void {
+      if (!this.template) return;
+      const from = this.template.fields.findIndex((f) => f.id === fieldId);
+      if (from === -1) return;
+      const clamped = Math.max(0, Math.min(toIndex, this.template.fields.length - 1));
+      if (from === clamped) return;
+      this.beginStep(null);
+      const [moved] = this.template.fields.splice(from, 1);
+      this.template.fields.splice(clamped, 0, moved!);
+      this.template.updatedAt = Date.now();
+    },
+
+    // Apply a full reordering of the field list from a drag/keyboard gesture.
+    // Accepts the finalised order as an array of field ids and commits exactly
+    // one HistoryStep. A no-op (same order or unknown id set) does not push.
+    // The pointer/keyboard reorder components use this so the library's own
+    // "final values" event maps 1:1 to a single undo step.
+    reorderFields(newOrder: FieldId[]): void {
+      if (!this.template) return;
+      const current = this.template.fields;
+      if (newOrder.length !== current.length) return;
+      const byId = new Map(current.map((f) => [f.id, f] as const));
+      const reordered: Field[] = [];
+      for (const id of newOrder) {
+        const f = byId.get(id);
+        if (!f) return;
+        reordered.push(f);
+      }
+      let same = true;
+      for (let i = 0; i < current.length; i++) {
+        if (current[i]!.id !== reordered[i]!.id) {
+          same = false;
+          break;
+        }
+      }
+      if (same) return;
+      this.beginStep(null);
+      this.template.fields = reordered;
+      this.template.updatedAt = Date.now();
+    },
+
+    // Same shape as `reorderFields` but for a choice field's option list.
+    reorderFieldOptions(fieldId: FieldId, newOrder: OptionId[]): void {
+      const field = this.findField(fieldId);
+      if (!field || !isChoiceField(field)) return;
+      const current = field.options;
+      if (newOrder.length !== current.length) return;
+      const byId = new Map(current.map((o) => [o.id, o] as const));
+      const reordered: FieldOption[] = [];
+      for (const id of newOrder) {
+        const o = byId.get(id);
+        if (!o) return;
+        reordered.push(o);
+      }
+      let same = true;
+      for (let i = 0; i < current.length; i++) {
+        if (current[i]!.id !== reordered[i]!.id) {
+          same = false;
+          break;
+        }
+      }
+      if (same) return;
+      this.beginStep(null);
+      field.options = reordered;
+      this.template!.updatedAt = Date.now();
+    },
+
     deleteField(fieldId: FieldId): void {
       if (!this.template) return;
       const idx = this.template.fields.findIndex((f) => f.id === fieldId);

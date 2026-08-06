@@ -41,6 +41,9 @@ importers:
       '@form-builder/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@formkit/drag-and-drop':
+        specifier: ^0.6.1
+        version: 0.6.1
       pinia:
         specifier: ^2.2.6
         version: 2.3.1(typescript@5.9.3)(vue@3.5.41(typescript@5.9.3))
@@ -472,6 +475,14 @@ packages:
       '@noble/hashes': ^1.8.0 || ^2.0.0
     peerDependenciesMeta:
       '@noble/hashes':
+        optional: true
+
+  '@formkit/drag-and-drop@0.6.1':
+    resolution: {integrity: sha512-DNKoPqdg9RW7k0zZlF2FH636Cc16V3tuGDVKWNHpSXr3amF4nmQZfieoLNVRxqWxXVFJq2DY+vf8SCD10JyjAA==}
+    peerDependencies:
+      '@marko/runtime-tags': '>=6.0.166'
+    peerDependenciesMeta:
+      '@marko/runtime-tags':
         optional: true
 
   '@hono/node-server@1.19.17':
@@ -1668,6 +1679,8 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.15.1': {}
+
+  '@formkit/drag-and-drop@0.6.1': {}
 
   '@hono/node-server@1.19.17(hono@4.13.0)':
     dependencies:

@@ -524,3 +524,164 @@ describe('editor store — option-list mutations', () => {
     }
   });
 });
+
+describe('editor store — moveField (field reordering)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.useFakeTimers();
+  });
+
+  function seedThreeFields() {
+    const store = initStore();
+    const a = store.addTextField()!;
+    const b = store.addTextField()!;
+    const c = store.addTextField()!;
+    return { store, a, b, c };
+  }
+
+  it('reorders fields and pushes exactly one HistoryStep', () => {
+    const { store, a, b, c } = seedThreeFields();
+    const depth = store.undoDepth;
+
+    store.moveField(c, 0);
+
+    expect(store.undoDepth).toBe(depth + 1);
+    expect(store.template!.fields.map((f) => f.id)).toEqual([c, a, b]);
+  });
+
+  it('is a no-op when the field ends where it started (no HistoryStep)', () => {
+    const { store, a } = seedThreeFields();
+    const depth = store.undoDepth;
+
+    store.moveField(a, 0);
+
+    expect(store.undoDepth).toBe(depth);
+  });
+
+  it('clamps the destination index to the last valid position', () => {
+    const { store, a, b, c } = seedThreeFields();
+
+    store.moveField(a, 99);
+
+    expect(store.template!.fields.map((f) => f.id)).toEqual([b, c, a]);
+  });
+
+  it('is a no-op when the field id is unknown (no HistoryStep)', () => {
+    const { store } = seedThreeFields();
+    const depth = store.undoDepth;
+
+    store.moveField('nope', 0);
+
+    expect(store.undoDepth).toBe(depth);
+  });
+
+  it('undo reverts a field reorder', () => {
+    const { store, a, b, c } = seedThreeFields();
+
+    store.moveField(c, 0);
+    store.undo();
+
+    expect(store.template!.fields.map((f) => f.id)).toEqual([a, b, c]);
+  });
+
+  describe('reorderFields (batch reorder for drag-and-drop gestures)', () => {
+    it('applies the new order and pushes exactly one HistoryStep', () => {
+      const { store, a, b, c } = seedThreeFields();
+      const depth = store.undoDepth;
+
+      store.reorderFields([c, a, b]);
+
+      expect(store.undoDepth).toBe(depth + 1);
+      expect(store.template!.fields.map((f) => f.id)).toEqual([c, a, b]);
+    });
+
+    it('does not push when the new order equals the current order', () => {
+      const { store, a, b, c } = seedThreeFields();
+      const depth = store.undoDepth;
+
+      store.reorderFields([a, b, c]);
+
+      expect(store.undoDepth).toBe(depth);
+    });
+
+    it('rejects (no push) an order with a different length or unknown ids', () => {
+      const { store, a, b } = seedThreeFields();
+      const depth = store.undoDepth;
+
+      store.reorderFields([a, b]);
+      store.reorderFields([a, b, 'ghost']);
+
+      expect(store.undoDepth).toBe(depth);
+    });
+
+    it('undo reverts a reorderFields gesture', () => {
+      const { store, a, b, c } = seedThreeFields();
+
+      store.reorderFields([c, b, a]);
+      store.undo();
+
+      expect(store.template!.fields.map((f) => f.id)).toEqual([a, b, c]);
+    });
+  });
+});
+
+describe('editor store — reorderFieldOptions (batch reorder for drag-and-drop gestures)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.useFakeTimers();
+  });
+
+  function seedRadioThree() {
+    const store = initStore();
+    const fieldId = store.addRadioField()!;
+    const b = store.addFieldOption(fieldId)!;
+    const c = store.addFieldOption(fieldId)!;
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const a = field.options[0]!.id;
+    return { store, fieldId, a, b, c };
+  }
+
+  it('applies the new option order and pushes exactly one HistoryStep', () => {
+    const { store, fieldId, a, b, c } = seedRadioThree();
+    const depth = store.undoDepth;
+
+    store.reorderFieldOptions(fieldId, [c, a, b]);
+
+    expect(store.undoDepth).toBe(depth + 1);
+    const field = store.findField(fieldId);
+    if (field && isChoiceField(field)) {
+      expect(field.options.map((o) => o.id)).toEqual([c, a, b]);
+    }
+  });
+
+  it('does not push when the new order equals the current order', () => {
+    const { store, fieldId, a, b, c } = seedRadioThree();
+    const depth = store.undoDepth;
+
+    store.reorderFieldOptions(fieldId, [a, b, c]);
+
+    expect(store.undoDepth).toBe(depth);
+  });
+
+  it('rejects unknown option ids without pushing', () => {
+    const { store, fieldId, a, b } = seedRadioThree();
+    const depth = store.undoDepth;
+
+    store.reorderFieldOptions(fieldId, [a, b, 'ghost']);
+
+    expect(store.undoDepth).toBe(depth);
+  });
+
+  it('undo reverts a reorderFieldOptions gesture', () => {
+    const { store, fieldId, a, b, c } = seedRadioThree();
+
+    store.reorderFieldOptions(fieldId, [c, b, a]);
+    store.undo();
+
+    const field = store.findField(fieldId);
+    if (field && isChoiceField(field)) {
+      expect(field.options.map((o) => o.id)).toEqual([a, b, c]);
+    }
+  });
+});
