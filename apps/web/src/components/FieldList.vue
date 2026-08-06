@@ -203,7 +203,7 @@ function requiredInputId(fieldId: string): string {
                     </span>
                     <Info
                       v-if="findField(fieldId)!.description"
-                      class="size-4 text-muted-fg"
+                      class="size-3 text-indigo-400"
                       aria-hidden="true"
                     />
                     <Badge
@@ -228,26 +228,28 @@ function requiredInputId(fieldId: string): string {
                   </span>
                 </button>
 
-                <Button
-                  variant="ghost"
-                  icon-only
-                  size="sm"
-                  :aria-label="`Edit field ${findField(fieldId)!.label || 'untitled'}`"
-                  class="text-muted-fg/80 hover:text-fg"
-                  @click.stop="expand(fieldId)"
-                >
-                  <Pencil class="size-4" aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  icon-only
-                  size="sm"
-                  class="text-muted-fg/80 hover:text-danger"
-                  :aria-label="`Delete field ${findField(fieldId)!.label || 'untitled'}`"
-                  @click.stop="store.deleteField(fieldId)"
-                >
-                  <Trash2 class="size-4" aria-hidden="true" />
-                </Button>
+                <div class="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    icon-only
+                    size="sm"
+                    :aria-label="`Edit field ${findField(fieldId)!.label || 'untitled'}`"
+                    class="text-muted-fg/80 hover:text-fg"
+                    @click.stop="expand(fieldId)"
+                  >
+                    <Pencil class="size-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    icon-only
+                    size="sm"
+                    class="text-muted-fg/80 hover:text-danger"
+                    :aria-label="`Delete field ${findField(fieldId)!.label || 'untitled'}`"
+                    @click.stop="store.deleteField(fieldId)"
+                  >
+                    <Trash2 class="size-4" aria-hidden="true" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
