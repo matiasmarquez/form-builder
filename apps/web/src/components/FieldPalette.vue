@@ -39,10 +39,16 @@ function addField(type: Field["type"]): void {
 
 <template>
   <div class="space-y-5">
+    <h2
+      class="text-base font-medium text-fg border-b border-border pb-4 -mx-4 px-4"
+    >
+      Add elements
+    </h2>
+
     <div class="space-y-2">
-      <h2 class="text-xs uppercase tracking-wide text-muted-fg">
+      <h3 class="text-xs uppercase tracking-wide text-muted-fg">
         Text elements
-      </h2>
+      </h3>
       <div class="grid grid-cols-2 gap-1 lg:grid-cols-1">
         <Button
           v-for="type in TEXT_FIELD_TYPES"
@@ -68,9 +74,9 @@ function addField(type: Field["type"]): void {
     </div>
 
     <div class="space-y-2">
-      <h2 class="text-xs uppercase tracking-wide text-muted-fg">
+      <h3 class="text-xs uppercase tracking-wide text-muted-fg">
         Multi elements
-      </h2>
+      </h3>
       <div class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
         <Button
           v-for="type in MULTI_FIELD_TYPES"
