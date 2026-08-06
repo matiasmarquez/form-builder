@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import type { TextField } from '@form-builder/shared';
+import type { Field } from '@form-builder/shared';
 import { useEditorStore } from '../stores/editor.ts';
 
 const route = useRoute();
 const store = useEditorStore();
 
 const template = computed(() => store.template);
-const textFields = computed<TextField[]>(() =>
-  (store.template?.fields ?? []).filter((f): f is TextField => f.type === 'text'),
-);
+const fields = computed<Field[]>(() => store.template?.fields ?? []);
 
 function seedFromRoute(): void {
   const id = String(route.params.id);
@@ -27,8 +25,6 @@ function onKeydown(event: KeyboardEvent): void {
   const key = event.key.toLowerCase();
   if (key !== 'z') return;
   event.preventDefault();
-  // Flush any in-flight typing coalesce so the undo sees the current state,
-  // not a stale one waiting for the 500ms pause.
   store.flushCoalesce();
   if (event.shiftKey) {
     store.redo();
@@ -45,6 +41,27 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown);
 });
 watch(() => route.params.id, seedFromRoute);
+
+// Exhaustive human label — the `never` fallthrough forces this to be updated
+// whenever a new variant is added to the Field discriminated union.
+function fieldTypeLabel(type: Field['type']): string {
+  switch (type) {
+    case 'text':
+      return 'Short answer';
+    case 'paragraph':
+      return 'Paragraph';
+    case 'checkbox':
+      return 'Checkboxes';
+    case 'radio':
+      return 'Multiple choice';
+    case 'select':
+      return 'Dropdown';
+    default: {
+      const _exhaustive: never = type;
+      return _exhaustive;
+    }
+  }
+}
 </script>
 
 <template>
@@ -77,22 +94,27 @@ watch(() => route.params.id, seedFromRoute);
 
     <ul class="space-y-4">
       <li
-        v-for="field in textFields"
+        v-for="field in fields"
         :key="field.id"
         class="rounded-lg border border-neutral-200 bg-white p-5 space-y-3 shadow-sm"
       >
         <div class="flex items-start justify-between gap-4">
-          <label class="flex-1">
-            <span class="sr-only">Field label</span>
-            <input
-              :value="field.label"
-              @input="store.setFieldLabel(field.id, ($event.target as HTMLInputElement).value)"
-              @blur="store.flushCoalesce()"
-              class="w-full bg-transparent text-lg font-medium outline-none placeholder:text-neutral-400"
-              placeholder="Question"
-              :aria-label="`Label for field ${field.id}`"
-            />
-          </label>
+          <div class="flex-1 space-y-1">
+            <div class="text-xs uppercase tracking-wide text-neutral-500">
+              {{ fieldTypeLabel(field.type) }}
+            </div>
+            <label class="block">
+              <span class="sr-only">Field label</span>
+              <input
+                :value="field.label"
+                @input="store.setFieldLabel(field.id, ($event.target as HTMLInputElement).value)"
+                @blur="store.flushCoalesce()"
+                class="w-full bg-transparent text-lg font-medium outline-none placeholder:text-neutral-400"
+                placeholder="Question"
+                :aria-label="`Label for field ${field.id}`"
+              />
+            </label>
+          </div>
           <button
             type="button"
             @click="store.deleteField(field.id)"
@@ -114,13 +136,86 @@ watch(() => route.params.id, seedFromRoute);
           />
         </label>
 
-        <input
-          :value="field.placeholder ?? ''"
-          @input="store.setTextFieldPlaceholder(field.id, ($event.target as HTMLInputElement).value)"
-          @blur="store.flushCoalesce()"
-          class="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none placeholder:text-neutral-400"
-          placeholder="Placeholder shown to respondents"
-        />
+        <!-- Variant-specific body. The `field.type === '…'` guards drive TS to
+             narrow `field` to the correct variant, giving us exhaustive strict
+             typing at each branch. -->
+        <template v-if="field.type === 'text'">
+          <input
+            :value="field.placeholder ?? ''"
+            @input="store.setTextFieldPlaceholder(field.id, ($event.target as HTMLInputElement).value)"
+            @blur="store.flushCoalesce()"
+            class="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none placeholder:text-neutral-400"
+            placeholder="Placeholder shown to respondents"
+          />
+        </template>
+
+        <template v-else-if="field.type === 'paragraph'">
+          <textarea
+            :value="field.placeholder ?? ''"
+            @input="store.setTextFieldPlaceholder(field.id, ($event.target as HTMLTextAreaElement).value)"
+            @blur="store.flushCoalesce()"
+            class="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none placeholder:text-neutral-400 resize-none"
+            rows="3"
+            placeholder="Placeholder shown to respondents"
+          ></textarea>
+        </template>
+
+        <template v-else-if="field.type === 'checkbox' || field.type === 'radio' || field.type === 'select'">
+          <ul class="space-y-2" :aria-label="`Options for ${field.label || 'untitled field'}`">
+            <li
+              v-for="(option, index) in field.options"
+              :key="option.id"
+              class="flex items-center gap-2"
+            >
+              <span
+                v-if="field.type === 'radio'"
+                class="h-4 w-4 rounded-full border border-neutral-300 shrink-0"
+                aria-hidden="true"
+              ></span>
+              <span
+                v-else-if="field.type === 'checkbox'"
+                class="h-4 w-4 rounded border border-neutral-300 shrink-0"
+                aria-hidden="true"
+              ></span>
+              <span
+                v-else
+                class="w-6 text-right text-xs text-neutral-500 shrink-0"
+                aria-hidden="true"
+                >{{ index + 1 }}.</span
+              >
+              <input
+                :value="option.label"
+                @input="
+                  store.setFieldOptionLabel(
+                    field.id,
+                    option.id,
+                    ($event.target as HTMLInputElement).value,
+                  )
+                "
+                @blur="store.flushCoalesce()"
+                class="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400 border-b border-transparent focus:border-neutral-300 py-1"
+                :placeholder="`Option ${index + 1}`"
+                :aria-label="`Option ${index + 1} label`"
+              />
+              <button
+                type="button"
+                @click="store.deleteFieldOption(field.id, option.id)"
+                :disabled="field.options.length <= 1"
+                class="text-xs text-neutral-400 hover:text-red-600 disabled:opacity-40 disabled:hover:text-neutral-400"
+                :aria-label="`Delete option ${option.label || index + 1}`"
+              >
+                Remove
+              </button>
+            </li>
+          </ul>
+          <button
+            type="button"
+            @click="store.addFieldOption(field.id)"
+            class="text-sm text-neutral-600 hover:text-neutral-900"
+          >
+            + Add option
+          </button>
+        </template>
 
         <label class="inline-flex items-center gap-2 text-sm text-neutral-700">
           <input
@@ -133,12 +228,42 @@ watch(() => route.params.id, seedFromRoute);
       </li>
     </ul>
 
-    <button
-      type="button"
-      @click="store.addTextField()"
-      class="rounded-md border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 w-full"
-    >
-      + Add text field
-    </button>
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <button
+        type="button"
+        @click="store.addTextField()"
+        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+      >
+        + Short answer
+      </button>
+      <button
+        type="button"
+        @click="store.addParagraphField()"
+        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+      >
+        + Paragraph
+      </button>
+      <button
+        type="button"
+        @click="store.addCheckboxField()"
+        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+      >
+        + Checkboxes
+      </button>
+      <button
+        type="button"
+        @click="store.addRadioField()"
+        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+      >
+        + Multiple choice
+      </button>
+      <button
+        type="button"
+        @click="store.addSelectField()"
+        class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+      >
+        + Dropdown
+      </button>
+    </div>
   </section>
 </template>

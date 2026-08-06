@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { HISTORY_CAP, useEditorStore } from './editor.ts';
+import { HISTORY_CAP, isChoiceField, useEditorStore } from './editor.ts';
 
 function initStore() {
   const store = useEditorStore();
@@ -252,5 +252,275 @@ describe('editor store history', () => {
 
       expect(store.undoDepth).toBe(depth);
     });
+  });
+});
+
+describe('editor store — all field variants', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.useFakeTimers();
+  });
+
+  it('adds a paragraph field with an empty placeholder', () => {
+    const store = initStore();
+    const id = store.addParagraphField()!;
+    const field = store.findField(id);
+    expect(field?.type).toBe('paragraph');
+    if (field?.type === 'paragraph') {
+      expect(field.placeholder).toBe('');
+      expect(field.required).toBe(false);
+    }
+  });
+
+  it('adds checkbox/radio/select fields with one initial option each having a UUID', () => {
+    const store = initStore();
+    for (const add of [
+      () => store.addCheckboxField(),
+      () => store.addRadioField(),
+      () => store.addSelectField(),
+    ] as const) {
+      const id = add()!;
+      const field = store.findField(id);
+      expect(field).toBeDefined();
+      expect(isChoiceField(field!)).toBe(true);
+      if (field && isChoiceField(field)) {
+        expect(field.options.length).toBe(1);
+        expect(field.options[0]!.id).toMatch(/[0-9a-f-]{10,}/i);
+      }
+    }
+  });
+
+  it('setTextFieldPlaceholder works for paragraph fields too', () => {
+    const store = initStore();
+    const id = store.addParagraphField()!;
+    store.setTextFieldPlaceholder(id, 'Long answer here…');
+    const field = store.findField(id);
+    if (field?.type === 'paragraph') {
+      expect(field.placeholder).toBe('Long answer here…');
+    }
+  });
+
+  it('setTextFieldPlaceholder is a no-op for choice fields', () => {
+    const store = initStore();
+    const id = store.addCheckboxField()!;
+    const before = store.undoDepth;
+    store.setTextFieldPlaceholder(id, 'nope');
+    expect(store.undoDepth).toBe(before);
+  });
+});
+
+describe('editor store — option-list mutations', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.useFakeTimers();
+  });
+
+  function seedRadio() {
+    const store = initStore();
+    const fieldId = store.addRadioField()!;
+    return { store, fieldId };
+  }
+
+  it('addFieldOption appends an option with a fresh UUID and pushes a step', () => {
+    const { store, fieldId } = seedRadio();
+    const depth = store.undoDepth;
+
+    const optionId = store.addFieldOption(fieldId)!;
+
+    expect(store.undoDepth).toBe(depth + 1);
+    const field = store.findField(fieldId);
+    if (field && isChoiceField(field)) {
+      expect(field.options.length).toBe(2);
+      expect(field.options[1]!.id).toBe(optionId);
+      expect(field.options[0]!.id).not.toBe(optionId);
+    }
+  });
+
+  it('setFieldOptionLabel coalesces sequential edits into a single step', () => {
+    const { store, fieldId } = seedRadio();
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const optionId = field.options[0]!.id;
+    const depth = store.undoDepth;
+
+    store.setFieldOptionLabel(fieldId, optionId, 'R');
+    store.setFieldOptionLabel(fieldId, optionId, 'Re');
+    store.setFieldOptionLabel(fieldId, optionId, 'Red');
+
+    expect(store.undoDepth).toBe(depth + 1);
+    const after = store.findField(fieldId);
+    if (after && isChoiceField(after)) {
+      expect(after.options[0]!.label).toBe('Red');
+    }
+  });
+
+  it('setFieldOptionLabel starts a new step after the typing-pause window', () => {
+    const { store, fieldId } = seedRadio();
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const optionId = field.options[0]!.id;
+    const depth = store.undoDepth;
+
+    store.setFieldOptionLabel(fieldId, optionId, 'Red');
+    vi.advanceTimersByTime(600);
+    store.setFieldOptionLabel(fieldId, optionId, 'Reddish');
+
+    expect(store.undoDepth).toBe(depth + 2);
+  });
+
+  it('editing two different options starts two distinct coalesce windows', () => {
+    const { store, fieldId } = seedRadio();
+    const a = store.findField(fieldId);
+    if (!a || !isChoiceField(a)) throw new Error('bad seed');
+    const firstId = a.options[0]!.id;
+    const secondId = store.addFieldOption(fieldId)!;
+    const depth = store.undoDepth;
+
+    store.setFieldOptionLabel(fieldId, firstId, 'Red');
+    store.setFieldOptionLabel(fieldId, secondId, 'Blue');
+
+    expect(store.undoDepth).toBe(depth + 2);
+  });
+
+  it('deleteFieldOption removes the option immediately and pushes a step', () => {
+    const { store, fieldId } = seedRadio();
+    const optionId = store.addFieldOption(fieldId)!;
+    const depth = store.undoDepth;
+
+    store.deleteFieldOption(fieldId, optionId);
+
+    expect(store.undoDepth).toBe(depth + 1);
+    const field = store.findField(fieldId);
+    if (field && isChoiceField(field)) {
+      expect(field.options.some((o) => o.id === optionId)).toBe(false);
+    }
+  });
+
+  it('deleteFieldOption is a no-op when the option id is unknown', () => {
+    const { store, fieldId } = seedRadio();
+    const depth = store.undoDepth;
+
+    store.deleteFieldOption(fieldId, 'nope');
+
+    expect(store.undoDepth).toBe(depth);
+  });
+
+  it('moveFieldOption reorders options and pushes a step', () => {
+    const { store, fieldId } = seedRadio();
+    const b = store.addFieldOption(fieldId)!;
+    const c = store.addFieldOption(fieldId)!;
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const a = field.options[0]!.id;
+    const depth = store.undoDepth;
+
+    store.moveFieldOption(fieldId, c, 0);
+
+    expect(store.undoDepth).toBe(depth + 1);
+    const after = store.findField(fieldId);
+    if (after && isChoiceField(after)) {
+      expect(after.options.map((o) => o.id)).toEqual([c, a, b]);
+    }
+  });
+
+  it('moveFieldOption is a no-op when the option ends where it started', () => {
+    const { store, fieldId } = seedRadio();
+    store.addFieldOption(fieldId);
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const a = field.options[0]!.id;
+    const depth = store.undoDepth;
+
+    store.moveFieldOption(fieldId, a, 0);
+
+    expect(store.undoDepth).toBe(depth);
+  });
+
+  it('option ids survive relabel and reorder', () => {
+    const { store, fieldId } = seedRadio();
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const originalId = field.options[0]!.id;
+
+    store.setFieldOptionLabel(fieldId, originalId, 'Renamed');
+    vi.advanceTimersByTime(600);
+    const secondId = store.addFieldOption(fieldId)!;
+    store.moveFieldOption(fieldId, originalId, 1);
+
+    const after = store.findField(fieldId);
+    if (after && isChoiceField(after)) {
+      expect(after.options.map((o) => o.id)).toEqual([secondId, originalId]);
+      expect(after.options.find((o) => o.id === originalId)!.label).toBe('Renamed');
+    }
+  });
+
+  it('undo reverts an option addition; redo re-applies it', () => {
+    const { store, fieldId } = seedRadio();
+    const before = store.findField(fieldId);
+    if (!before || !isChoiceField(before)) throw new Error('bad seed');
+    const beforeCount = before.options.length;
+
+    const newOptionId = store.addFieldOption(fieldId)!;
+
+    store.undo();
+    const undone = store.findField(fieldId);
+    if (undone && isChoiceField(undone)) {
+      expect(undone.options.length).toBe(beforeCount);
+    }
+
+    store.redo();
+    const redone = store.findField(fieldId);
+    if (redone && isChoiceField(redone)) {
+      expect(redone.options.some((o) => o.id === newOptionId)).toBe(true);
+    }
+  });
+
+  it('undo reverts an option deletion, restoring its id and label', () => {
+    const { store, fieldId } = seedRadio();
+    const optionId = store.addFieldOption(fieldId)!;
+    store.setFieldOptionLabel(fieldId, optionId, 'Blue');
+    vi.advanceTimersByTime(600);
+
+    store.deleteFieldOption(fieldId, optionId);
+
+    store.undo();
+    const field = store.findField(fieldId);
+    if (field && isChoiceField(field)) {
+      const restored = field.options.find((o) => o.id === optionId);
+      expect(restored?.label).toBe('Blue');
+    }
+  });
+
+  it('undo reverts an option reorder', () => {
+    const { store, fieldId } = seedRadio();
+    const b = store.addFieldOption(fieldId)!;
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const a = field.options[0]!.id;
+
+    store.moveFieldOption(fieldId, b, 0);
+
+    store.undo();
+    const after = store.findField(fieldId);
+    if (after && isChoiceField(after)) {
+      expect(after.options.map((o) => o.id)).toEqual([a, b]);
+    }
+  });
+
+  it('undo of a coalesced option-label edit reverts the whole run', () => {
+    const { store, fieldId } = seedRadio();
+    const field = store.findField(fieldId);
+    if (!field || !isChoiceField(field)) throw new Error('bad seed');
+    const optionId = field.options[0]!.id;
+
+    store.setFieldOptionLabel(fieldId, optionId, 'R');
+    store.setFieldOptionLabel(fieldId, optionId, 'Re');
+    store.setFieldOptionLabel(fieldId, optionId, 'Red');
+
+    store.undo();
+    const after = store.findField(fieldId);
+    if (after && isChoiceField(after)) {
+      expect(after.options[0]!.label).toBe('');
+    }
   });
 });

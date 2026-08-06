@@ -1,5 +1,21 @@
 import { defineStore } from 'pinia';
-import type { Field, FieldId, FormTemplate, TextField } from '@form-builder/shared';
+import type {
+  CheckboxField,
+  Field,
+  FieldId,
+  FieldOption,
+  FormTemplate,
+  OptionId,
+  ParagraphField,
+  RadioField,
+  SelectField,
+  TextField,
+} from '@form-builder/shared';
+
+// Field variants that carry an `options: FieldOption[]` array. Kept as a
+// TS-only alias so the runtime discriminated union stays authoritative in
+// `@form-builder/shared`.
+type ChoiceField = CheckboxField | RadioField | SelectField;
 
 export const HISTORY_CAP = 100;
 export const COALESCE_MS = 500;
@@ -24,6 +40,54 @@ export function createTextField(id: string): TextField {
     required: false,
     placeholder: '',
   };
+}
+
+export function createParagraphField(id: string): ParagraphField {
+  return {
+    id,
+    type: 'paragraph',
+    label: '',
+    description: '',
+    required: false,
+    placeholder: '',
+  };
+}
+
+export function createCheckboxField(id: string, optionId: string): CheckboxField {
+  return {
+    id,
+    type: 'checkbox',
+    label: '',
+    description: '',
+    required: false,
+    options: [{ id: optionId, label: '' }],
+  };
+}
+
+export function createRadioField(id: string, optionId: string): RadioField {
+  return {
+    id,
+    type: 'radio',
+    label: '',
+    description: '',
+    required: false,
+    options: [{ id: optionId, label: '' }],
+  };
+}
+
+export function createSelectField(id: string, optionId: string): SelectField {
+  return {
+    id,
+    type: 'select',
+    label: '',
+    description: '',
+    required: false,
+    options: [{ id: optionId, label: '' }],
+  };
+}
+
+export function isChoiceField(field: Field): field is ChoiceField {
+  return field.type === 'checkbox' || field.type === 'radio' || field.type === 'select';
 }
 
 // One entry in the undo/redo stack — a full snapshot of the FormTemplate at
@@ -169,9 +233,53 @@ export const useEditorStore = defineStore('editor', {
     },
 
     addTextField(): FieldId | null {
+      return this.addField('text');
+    },
+
+    addParagraphField(): FieldId | null {
+      return this.addField('paragraph');
+    },
+
+    addCheckboxField(): FieldId | null {
+      return this.addField('checkbox');
+    },
+
+    addRadioField(): FieldId | null {
+      return this.addField('radio');
+    },
+
+    addSelectField(): FieldId | null {
+      return this.addField('select');
+    },
+
+    // Central add-field entry point. Each variant delegates here so the
+    // history bookkeeping (beginStep, updatedAt) lives in exactly one place.
+    addField(type: Field['type']): FieldId | null {
       if (!this.template) return null;
       this.beginStep(null);
-      const field = createTextField(crypto.randomUUID());
+      const id = crypto.randomUUID();
+      let field: Field;
+      switch (type) {
+        case 'text':
+          field = createTextField(id);
+          break;
+        case 'paragraph':
+          field = createParagraphField(id);
+          break;
+        case 'checkbox':
+          field = createCheckboxField(id, crypto.randomUUID());
+          break;
+        case 'radio':
+          field = createRadioField(id, crypto.randomUUID());
+          break;
+        case 'select':
+          field = createSelectField(id, crypto.randomUUID());
+          break;
+        default: {
+          const _exhaustive: never = type;
+          return _exhaustive;
+        }
+      }
       this.template.fields.push(field);
       this.template.updatedAt = Date.now();
       return field.id;
@@ -212,10 +320,59 @@ export const useEditorStore = defineStore('editor', {
 
     setTextFieldPlaceholder(fieldId: FieldId, placeholder: string): void {
       const field = this.findField(fieldId);
-      if (!field || field.type !== 'text') return;
+      if (!field) return;
+      if (field.type !== 'text' && field.type !== 'paragraph') return;
       if ((field.placeholder ?? '') === placeholder) return;
       this.beginStep(`placeholder:${fieldId}`);
       field.placeholder = placeholder;
+      this.template!.updatedAt = Date.now();
+    },
+
+    // --- option-list mutations (checkbox/radio/select) ------------------------
+
+    addFieldOption(fieldId: FieldId): OptionId | null {
+      const field = this.findField(fieldId);
+      if (!field || !isChoiceField(field)) return null;
+      this.beginStep(null);
+      const option: FieldOption = { id: crypto.randomUUID(), label: '' };
+      field.options.push(option);
+      this.template!.updatedAt = Date.now();
+      return option.id;
+    },
+
+    setFieldOptionLabel(fieldId: FieldId, optionId: OptionId, label: string): void {
+      const field = this.findField(fieldId);
+      if (!field || !isChoiceField(field)) return;
+      const option = field.options.find((o) => o.id === optionId);
+      if (!option || option.label === label) return;
+      this.beginStep(`option-label:${fieldId}:${optionId}`);
+      option.label = label;
+      this.template!.updatedAt = Date.now();
+    },
+
+    deleteFieldOption(fieldId: FieldId, optionId: OptionId): void {
+      const field = this.findField(fieldId);
+      if (!field || !isChoiceField(field)) return;
+      const idx = field.options.findIndex((o) => o.id === optionId);
+      if (idx === -1) return;
+      this.beginStep(null);
+      field.options.splice(idx, 1);
+      this.template!.updatedAt = Date.now();
+    },
+
+    // Move `optionId` to index `toIndex` in the field's option list. No-ops
+    // if the option is already there — matches ticket 03's "reorder that ends
+    // where it started does not push a step" rule for fields.
+    moveFieldOption(fieldId: FieldId, optionId: OptionId, toIndex: number): void {
+      const field = this.findField(fieldId);
+      if (!field || !isChoiceField(field)) return;
+      const from = field.options.findIndex((o) => o.id === optionId);
+      if (from === -1) return;
+      const clamped = Math.max(0, Math.min(toIndex, field.options.length - 1));
+      if (from === clamped) return;
+      this.beginStep(null);
+      const [moved] = field.options.splice(from, 1);
+      field.options.splice(clamped, 0, moved!);
       this.template!.updatedAt = Date.now();
     },
 
@@ -224,3 +381,5 @@ export const useEditorStore = defineStore('editor', {
     },
   },
 });
+
+export type { ChoiceField };
