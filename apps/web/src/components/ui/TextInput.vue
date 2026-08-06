@@ -56,7 +56,7 @@ export default {
     :value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
-    class="w-full rounded-md px-3 py-2 text-sm text-fg placeholder:text-muted-fg disabled:opacity-40"
+    class="w-full rounded-md px-3 py-2 text-sm leading-relaxed text-fg placeholder:text-muted-fg disabled:opacity-40"
     :class="[FOCUS_RING_CLASSES, variantClass, attrs.class]"
     v-bind="{ ...attrs, class: undefined }"
     @input="onInput"

@@ -9,6 +9,7 @@ import Alert from "../components/ui/Alert.vue";
 import Button from "../components/ui/Button.vue";
 import Card from "../components/ui/Card.vue";
 import { usePreviewStore } from "../stores/preview.ts";
+import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 
 const route = useRoute();
 const store = usePreviewStore();
@@ -107,17 +108,21 @@ watch(
         role="status"
       >
         <PartyPopper class="mx-auto size-16 text-primary" aria-hidden="true" />
-        <h1 class="text-2xl font-semibold tracking-tight text-fg">
+        <h1 class="text-2xl font-semibold leading-tight tracking-tight text-fg">
           Response recorded
         </h1>
-        <p class="text-sm text-muted-fg">
+        <p class="text-sm leading-relaxed text-muted-fg">
           This is a preview — no data was actually submitted.
         </p>
         <Button variant="primary" @click="store.loadTemplate(template)">
           Submit another response
         </Button>
         <div>
-          <RouterLink to="/" class="text-sm text-primary hover:underline">
+          <RouterLink
+            to="/"
+            class="rounded-md text-sm leading-relaxed text-primary hover:underline"
+            :class="FOCUS_RING_CLASSES"
+          >
             ← Back to forms
           </RouterLink>
         </div>
@@ -130,12 +135,12 @@ watch(
         @submit="onSubmit"
       >
         <header class="space-y-2 border-b border-border pb-6">
-          <h1 class="text-3xl font-semibold tracking-tight text-fg">
+          <h1 class="text-3xl font-semibold leading-tight tracking-tight text-fg">
             {{ template.title || "Untitled Form" }}
           </h1>
           <p
             v-if="template.description"
-            class="whitespace-pre-wrap text-sm text-muted-fg"
+            class="whitespace-pre-wrap text-sm leading-relaxed text-muted-fg"
           >
             {{ template.description }}
           </p>

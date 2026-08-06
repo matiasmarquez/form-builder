@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Answer, Field, OptionId } from '@form-builder/shared';
+import { joinAriaDescribedBy } from '../lib/aria-describedby.ts';
+import { FOCUS_RING_CLASSES } from '../lib/focus-ring.ts';
 import { usePreviewStore } from '../stores/preview.ts';
 
 const props = defineProps<{
@@ -15,12 +17,12 @@ const descriptionId = computed(() => `field-${props.field.id}-description`);
 
 const error = computed(() => store.fieldErrors[props.field.id]);
 
-const describedBy = computed(() => {
-  const ids: string[] = [];
-  if (props.field.description) ids.push(descriptionId.value);
-  if (error.value) ids.push(errorId.value);
-  return ids.length > 0 ? ids.join(' ') : undefined;
-});
+const describedBy = computed(() =>
+  joinAriaDescribedBy(
+    props.field.description ? descriptionId.value : undefined,
+    error.value ? errorId.value : undefined,
+  ),
+);
 
 const answer = computed(() => store.answers[props.field.id]);
 
@@ -57,87 +59,85 @@ function onBlur(event?: FocusEvent): void {
   store.blurField(props.field.id);
 }
 
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface-elevated px-3 py-2 text-sm text-fg outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:ring-ring';
+const inputClass = [
+  'w-full rounded-md border border-border-strong bg-surface-elevated px-3 py-2 text-sm leading-relaxed text-fg',
+  FOCUS_RING_CLASSES,
+].join(' ');
+
+const choiceInputClass = [
+  'h-4 w-4 border-border-strong text-primary',
+  FOCUS_RING_CLASSES,
+].join(' ');
 </script>
 
 <template>
   <div class="space-y-2">
-    <div class="block">
+    <template v-if="field.type !== 'radio' && field.type !== 'checkbox'">
       <label
-        v-if="field.type !== 'radio' && field.type !== 'checkbox'"
         :for="controlId"
-        class="text-base font-medium text-fg"
+        class="block text-base font-medium leading-snug text-fg"
       >
         {{ field.label || 'Untitled field' }}
         <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
         <span v-if="field.required" class="sr-only"> (required)</span>
       </label>
+
       <p
-        v-else
-        class="text-base font-medium text-fg"
+        v-if="field.description"
+        :id="descriptionId"
+        class="text-sm leading-relaxed text-muted-fg"
       >
-        {{ field.label || 'Untitled field' }}
-        <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
-        <span v-if="field.required" class="sr-only"> (required)</span>
+        {{ field.description }}
       </p>
-    </div>
 
-    <p
-      v-if="field.description"
-      :id="descriptionId"
-      class="text-sm text-muted-fg"
-    >
-      {{ field.description }}
-    </p>
+      <!-- text -->
+      <input
+        v-if="field.type === 'text'"
+        :id="controlId"
+        type="text"
+        :value="typeof answer === 'string' ? answer : ''"
+        :placeholder="field.placeholder || undefined"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="describedBy"
+        :aria-required="field.required || undefined"
+        :class="inputClass"
+        @input="onTextInput"
+        @blur="onBlur"
+      />
 
-    <!-- text -->
-    <input
-      v-if="field.type === 'text'"
-      :id="controlId"
-      type="text"
-      :value="typeof answer === 'string' ? answer : ''"
-      :placeholder="field.placeholder || undefined"
-      :aria-invalid="error ? true : undefined"
-      :aria-describedby="describedBy"
-      :aria-required="field.required || undefined"
-      :class="inputClass"
-      @input="onTextInput"
-      @blur="onBlur"
-    />
+      <!-- paragraph -->
+      <textarea
+        v-else-if="field.type === 'paragraph'"
+        :id="controlId"
+        rows="4"
+        :value="typeof answer === 'string' ? answer : ''"
+        :placeholder="field.placeholder || undefined"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="describedBy"
+        :aria-required="field.required || undefined"
+        :class="[inputClass, 'resize-y']"
+        @input="onTextInput"
+        @blur="onBlur"
+      />
 
-    <!-- paragraph -->
-    <textarea
-      v-else-if="field.type === 'paragraph'"
-      :id="controlId"
-      rows="4"
-      :value="typeof answer === 'string' ? answer : ''"
-      :placeholder="field.placeholder || undefined"
-      :aria-invalid="error ? true : undefined"
-      :aria-describedby="describedBy"
-      :aria-required="field.required || undefined"
-      :class="[inputClass, 'resize-y']"
-      @input="onTextInput"
-      @blur="onBlur"
-    />
-
-    <!-- select -->
-    <select
-      v-else-if="field.type === 'select'"
-      :id="controlId"
-      :value="typeof answer === 'string' ? answer : ''"
-      :aria-invalid="error ? true : undefined"
-      :aria-describedby="describedBy"
-      :aria-required="field.required || undefined"
-      :class="inputClass"
-      @change="onSelectChange"
-      @blur="onBlur"
-    >
-      <option value="" disabled>Select an option</option>
-      <option v-for="opt in field.options" :key="opt.id" :value="opt.id">
-        {{ opt.label || 'Untitled option' }}
-      </option>
-    </select>
+      <!-- select -->
+      <select
+        v-else-if="field.type === 'select'"
+        :id="controlId"
+        :value="typeof answer === 'string' ? answer : ''"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="describedBy"
+        :aria-required="field.required || undefined"
+        :class="inputClass"
+        @change="onSelectChange"
+        @blur="onBlur"
+      >
+        <option value="" disabled>Select an option</option>
+        <option v-for="opt in field.options" :key="opt.id" :value="opt.id">
+          {{ opt.label || 'Untitled option' }}
+        </option>
+      </select>
+    </template>
 
     <!-- radio -->
     <fieldset
@@ -149,20 +149,30 @@ const inputClass =
       :aria-required="field.required || undefined"
       @focusout="onBlur($event)"
     >
-      <legend class="sr-only">{{ field.label || 'Untitled field' }}</legend>
+      <legend class="text-base font-medium leading-snug text-fg">
+        {{ field.label || 'Untitled field' }}
+        <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
+        <span v-if="field.required" class="sr-only"> (required)</span>
+      </legend>
+      <p
+        v-if="field.description"
+        :id="descriptionId"
+        class="text-sm leading-relaxed text-muted-fg"
+      >
+        {{ field.description }}
+      </p>
       <label
         v-for="opt in field.options"
         :key="opt.id"
-        class="flex items-center gap-2 text-sm text-fg"
+        class="flex items-center gap-2 text-sm leading-relaxed text-fg"
       >
         <input
           type="radio"
           :name="controlId"
           :value="opt.id"
           :checked="answer === opt.id"
-          :aria-describedby="describedBy"
           :aria-invalid="error ? true : undefined"
-          class="h-4 w-4 border-border-strong"
+          :class="choiceInputClass"
           @change="onRadioChange(opt.id)"
         />
         <span>{{ opt.label || 'Untitled option' }}</span>
@@ -179,19 +189,29 @@ const inputClass =
       :aria-required="field.required || undefined"
       @focusout="onBlur($event)"
     >
-      <legend class="sr-only">{{ field.label || 'Untitled field' }}</legend>
+      <legend class="text-base font-medium leading-snug text-fg">
+        {{ field.label || 'Untitled field' }}
+        <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
+        <span v-if="field.required" class="sr-only"> (required)</span>
+      </legend>
+      <p
+        v-if="field.description"
+        :id="descriptionId"
+        class="text-sm leading-relaxed text-muted-fg"
+      >
+        {{ field.description }}
+      </p>
       <label
         v-for="opt in field.options"
         :key="opt.id"
-        class="flex items-center gap-2 text-sm text-fg"
+        class="flex items-center gap-2 text-sm leading-relaxed text-fg"
       >
         <input
           type="checkbox"
           :value="opt.id"
           :checked="Array.isArray(answer) && answer.includes(opt.id)"
-          :aria-describedby="describedBy"
           :aria-invalid="error ? true : undefined"
-          class="h-4 w-4 rounded border-border-strong"
+          :class="[choiceInputClass, 'rounded']"
           @change="
             onCheckboxToggle(opt.id, ($event.target as HTMLInputElement).checked)
           "
@@ -204,7 +224,7 @@ const inputClass =
       v-if="error"
       :id="errorId"
       role="alert"
-      class="text-sm text-danger-fg"
+      class="text-sm leading-relaxed text-danger-fg"
     >
       {{ error }}
     </p>

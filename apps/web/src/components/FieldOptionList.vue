@@ -3,6 +3,8 @@ import { computed } from "vue";
 import type { FieldOption } from "@form-builder/shared";
 import { useEditorStore, isChoiceField } from "../stores/editor.ts";
 import { useReorderableList } from "../composables/useReorderableList.ts";
+import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
+import Button from "./ui/Button.vue";
 
 const props = defineProps<{
   fieldId: string;
@@ -38,6 +40,10 @@ function fieldType(): "checkbox" | "radio" | "select" | null {
   const field = store.findField(props.fieldId);
   if (!field || !isChoiceField(field)) return null;
   return field.type;
+}
+
+function optionLabelId(optionId: string): string {
+  return `option-${props.fieldId}-${optionId}-label`;
 }
 
 // Move focus to the drag handle inside the item with the given option id.
@@ -77,13 +83,14 @@ const canDeleteMore = computed(() => ids.value.length > 1);
       <button
         type="button"
         :data-option-handle="optionId"
-        @mousedown="onHandleMouseDown"
-        @keydown="onHandleKeydown($event, optionId)"
-        class="cursor-grab text-muted-fg hover:text-fg focus:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1"
+        class="cursor-grab rounded px-1 text-muted-fg hover:text-fg"
+        :class="FOCUS_RING_CLASSES"
         :aria-label="`Reorder option ${
           optionIndex(optionId) + 1
         }. Use arrow up and down to move.`"
         aria-keyshortcuts="ArrowUp ArrowDown"
+        @mousedown="onHandleMouseDown"
+        @keydown="onHandleKeydown($event, optionId)"
       >
         <span aria-hidden="true">⋮⋮</span>
       </button>
@@ -99,12 +106,19 @@ const canDeleteMore = computed(() => ids.value.length > 1);
       ></span>
       <span
         v-else
-        class="w-6 text-right text-xs text-muted-fg shrink-0"
+        class="w-6 shrink-0 text-right text-xs leading-relaxed text-muted-fg"
         aria-hidden="true"
         >{{ index + 1 }}.</span
       >
+      <label :for="optionLabelId(optionId)" class="sr-only">
+        Option {{ index + 1 }} label
+      </label>
       <input
+        :id="optionLabelId(optionId)"
         :value="findOption(optionId)?.label ?? ''"
+        class="flex-1 rounded-md border-b border-transparent bg-transparent py-1 text-sm leading-relaxed text-fg placeholder:text-muted-fg focus:border-border"
+        :class="FOCUS_RING_CLASSES"
+        :placeholder="`Option ${index + 1}`"
         @input="
           store.setFieldOptionLabel(
             fieldId,
@@ -113,21 +127,19 @@ const canDeleteMore = computed(() => ids.value.length > 1);
           )
         "
         @blur="store.flushCoalesce()"
-        class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-fg border-b border-transparent focus:border-border py-1 text-fg"
-        :placeholder="`Option ${index + 1}`"
-        :aria-label="`Option ${index + 1} label`"
       />
-      <button
-        type="button"
-        @click="store.deleteFieldOption(fieldId, optionId)"
+      <Button
+        variant="ghost"
+        size="sm"
+        class="text-xs text-muted-fg hover:text-danger"
         :disabled="!canDeleteMore"
-        class="text-xs text-muted-fg hover:text-danger disabled:opacity-40 disabled:hover:text-muted-fg"
         :aria-label="`Delete option ${
           findOption(optionId)?.label || index + 1
         }`"
+        @click="store.deleteFieldOption(fieldId, optionId)"
       >
         Remove
-      </button>
+      </Button>
     </li>
   </ul>
 </template>

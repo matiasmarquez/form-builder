@@ -10,9 +10,10 @@
   --color-surface-elevated: white;
   --color-surface-hover: var(--color-neutral-100);
   --color-border: var(--color-neutral-200);
-  --color-border-strong: var(--color-neutral-300);
+  /* ≥3:1 non-text contrast on surface / elevated (WCAG 1.4.11) */
+  --color-border-strong: var(--color-neutral-500);
   --color-fg: var(--color-neutral-900);
-  --color-muted-fg: var(--color-neutral-500);
+  --color-muted-fg: var(--color-neutral-600);
   --color-danger: var(--color-red-600);
   --color-danger-fg: var(--color-red-700);
   --color-warning: var(--color-amber-500);
@@ -31,13 +32,14 @@
     transparent
   );
   --color-border: var(--color-neutral-800);
-  --color-border-strong: var(--color-neutral-700);
+  /* ≥3:1 non-text contrast on surface-elevated (WCAG 1.4.11) */
+  --color-border-strong: var(--color-neutral-500);
   --color-fg: var(--color-neutral-100);
   --color-muted-fg: var(--color-neutral-400);
   --color-danger: var(--color-red-400);
   --color-danger-fg: var(--color-red-300);
   --color-warning: var(--color-amber-400);
-  --color-ring: var(--color-emerald-500);
+  --color-ring: var(--color-emerald-400);
 }
 
 html {

@@ -5,6 +5,7 @@ import { AlertCircle, Check, Circle, Loader2 } from "lucide-vue-next";
 import { useEditorStore } from "../stores/editor.ts";
 import { useAutosaveStore } from "../stores/autosave.ts";
 import Button from "./ui/Button.vue";
+import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 
 const props = defineProps<{
   onSave: () => void | Promise<void>;
@@ -193,14 +194,19 @@ const statusLabel = computed(() => {
     </div>
 
     <div class="flex items-center gap-3">
-      <label class="inline-flex items-center gap-2 text-sm text-fg">
+      <label
+        class="inline-flex items-center gap-2 text-sm leading-relaxed text-fg"
+        for="editor-autosave"
+      >
         <input
+          id="editor-autosave"
           type="checkbox"
+          class="rounded border-border-strong"
+          :class="FOCUS_RING_CLASSES"
           :checked="autosaveEnabled"
           @change="
             autosave.setEnabled(($event.target as HTMLInputElement).checked)
           "
-          aria-label="Autosave"
         />
         Autosave
       </label>

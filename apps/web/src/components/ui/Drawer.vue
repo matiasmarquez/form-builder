@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { FOCUS_RING_CLASSES } from '../../lib/focus-ring.ts';
 
 const props = defineProps<{
   open: boolean;
@@ -100,7 +101,8 @@ onBeforeUnmount(() => {
         <slot name="header" />
         <button
           type="button"
-          class="rounded-md px-2 py-1 text-sm text-muted-fg hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          class="rounded-md px-2 py-1 text-sm text-muted-fg hover:text-fg"
+          :class="FOCUS_RING_CLASSES"
           aria-label="Close drawer"
           @click="close"
         >

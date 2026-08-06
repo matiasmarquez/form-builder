@@ -29,10 +29,9 @@ A minimal `tokens.css`-style block declared inside `@theme` in `apps/web/src/sty
 | `--color-surface`         | `neutral-50`       | `neutral-950`      | Page background                               |
 | `--color-surface-elevated`| `white`            | `neutral-900`      | Cards, drawer, alerts, elevated surfaces      |
 | `--color-border`          | `neutral-200`      | `neutral-800`      | Container borders                             |
-| `--color-border-strong`   | `neutral-300`      | `neutral-700`      | Interactive element borders (inputs, buttons) |
+| `--color-border-strong`   | `neutral-500`      | `neutral-500`      | Interactive element borders (inputs, buttons) |
 | `--color-fg`              | `neutral-900`      | `neutral-100`      | Primary text                                  |
-| `--color-muted-fg`        | `neutral-500`      | `neutral-400`      | Secondary text, timestamps, type badges       |
-| `--color-danger`          | `red-600`          | `red-500`          | Destructive actions, errors                   |
+| `--color-muted-fg`        | `neutral-600`      | `neutral-400`      | Secondary text, timestamps, type badges       || `--color-danger`          | `red-600`          | `red-500`          | Destructive actions, errors                   |
 | `--color-danger-fg`       | `red-700`          | `red-300`          | Error message text                            |
 | `--color-warning`         | `amber-500`        | `amber-400`        | "Unsaved changes" dirty state                 |
 | `--color-ring`            | `emerald-500`      | `emerald-400`      | Focus ring colour                             |
@@ -45,10 +44,10 @@ Outfit (already wired). Five roles, applied consistently:
 
 | Role      | Classes                                           | Where                                             |
 | --------- | ------------------------------------------------- | ------------------------------------------------- |
-| `display` | `text-3xl font-semibold`                          | Form title (editor + preview)                     |
-| `heading` | `text-2xl font-semibold`                          | Page title ("Form builder" on home)               |
-| `label`   | `text-base font-medium`                           | Field labels                                      |
-| `body`    | `text-sm`                                         | Helper text, descriptions, error messages         |
+| `display` | `text-3xl font-semibold leading-tight`            | Form title (editor + preview)                     |
+| `heading` | `text-2xl font-semibold leading-tight`            | Page title ("Form builder" on home)               |
+| `label`   | `text-base font-medium leading-snug`              | Field labels                                      |
+| `body`    | `text-sm leading-relaxed`                         | Helper text, descriptions, error messages         |
 | `micro`   | `text-xs uppercase tracking-wide text-muted-fg`   | Type badges, timestamps                           |
 
 ### 1.4 Radii, shadow, border
@@ -304,7 +303,7 @@ No list-reorder animation on DnD (out of scope).
 - Radio and checkbox groups in preview wrapped in `<fieldset>` + `<legend>` derived from the field label.
 - Helper descriptions linked to their input via `aria-describedby`.
 - Validation errors: `role="alert"` + linked to input via `aria-describedby`.
-- Colour contrast: verified for `teal-600` on `--color-surface-elevated` (light) and `teal-400` on `neutral-900` (dark) — both must clear WCAG AA for regular text.
+- Colour contrast: verified for `emerald-600` on `--color-surface-elevated` (light) and `emerald-400` on `neutral-900` (dark) — both clear WCAG AA for regular text. Light `--color-muted-fg` uses `neutral-600` (not `neutral-500`) so body secondary text clears AA on `--color-surface`.
 
 ---
 

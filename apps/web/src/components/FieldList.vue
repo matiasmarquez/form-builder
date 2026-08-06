@@ -14,6 +14,7 @@ import { storeToRefs } from "pinia";
 import { useEditorStore, isChoiceField } from "../stores/editor.ts";
 import { useReorderableList } from "../composables/useReorderableList.ts";
 import { fieldTypeIcon, fieldTypeLabel } from "../lib/field-type-meta.ts";
+import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 import FieldOptionList from "./FieldOptionList.vue";
 import Badge from "./ui/Badge.vue";
 import Button from "./ui/Button.vue";
@@ -123,6 +124,22 @@ function optionCount(field: Field): number {
 function bodyId(fieldId: string): string {
   return `field-body-${fieldId}`;
 }
+
+function labelInputId(fieldId: string): string {
+  return `field-${fieldId}-label-input`;
+}
+
+function descriptionInputId(fieldId: string): string {
+  return `field-${fieldId}-description-input`;
+}
+
+function placeholderInputId(fieldId: string): string {
+  return `field-${fieldId}-placeholder-input`;
+}
+
+function requiredInputId(fieldId: string): string {
+  return `field-${fieldId}-required`;
+}
 </script>
 
 <template>
@@ -144,59 +161,73 @@ function bodyId(fieldId: string): string {
             :inert="isExpanded(fieldId)"
           >
             <div class="overflow-hidden">
-              <div class="flex items-center gap-2 px-3 py-2.5 pl-10 md:pl-3">
+              <div class="relative flex items-center gap-2 px-3 py-2.5 pl-10 md:pl-3">
                 <button
                   type="button"
-                  class="flex min-w-0 flex-1 items-center cursor-pointer gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                  :data-field-handle="fieldId"
+                  class="absolute left-2 top-1/2 inline-flex -translate-y-1/2 cursor-grab rounded text-muted-fg hover:text-fg md:static md:translate-y-0"
+                  :class="FOCUS_RING_CLASSES"
+                  :aria-label="`Reorder field ${findField(fieldId)!.label || 'untitled'}. Use arrow up and down to move.`"
+                  aria-keyshortcuts="ArrowUp ArrowDown"
+                  @mousedown="onHandleMouseDown"
+                  @keydown="onHandleKeydown($event, fieldId)"
+                >
+                  <GripVertical
+                    class="size-5 opacity-30"
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
+                  type="button"
+                  class="flex min-w-0 flex-1 items-center cursor-pointer gap-2 rounded-md text-left"
+                  :class="FOCUS_RING_CLASSES"
                   :aria-expanded="false"
                   :aria-controls="bodyId(fieldId)"
                   @click="expand(fieldId)"
                 >
-                  <button
-                    type="button"
-                    :data-field-handle="fieldId"
-                    class="inline-flex cursor-grab rounded border-border text-muted-fg hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface md:static"
-                    :aria-label="`Reorder field ${findField(fieldId)!.label || 'untitled'}. Use arrow up and down to move.`"
-                    aria-keyshortcuts="ArrowUp ArrowDown"
-                    @mousedown="onHandleMouseDown"
-                    @keydown="onHandleKeydown($event, fieldId)"
-                  >
-                    <GripVertical
-                      class="size-5 opacity-30"
-                      aria-hidden="true"
-                    />
-                  </button>
                   <component
                     :is="fieldTypeIcon(findField(fieldId)!.type)"
                     class="size-4 shrink-0 text-muted-fg"
                     aria-hidden="true"
                   />
                   <span
-                    class="min-w-0 flex-1 truncate text-sm font-medium text-fg"
+                    class="min-w-0 flex-1 truncate text-sm font-medium leading-snug text-fg"
                   >
                     {{ findField(fieldId)!.label || "Untitled field" }}
                   </span>
                   <span class="flex shrink-0 items-center gap-2">
+                    <span
+                      v-if="findField(fieldId)!.description"
+                      class="sr-only"
+                    >
+                      Has description.
+                    </span>
                     <Info
                       v-if="findField(fieldId)!.description"
                       class="size-4 text-muted-fg"
-                      aria-label="Has description"
+                      aria-hidden="true"
                     />
                     <Badge
                       v-if="isChoiceField(findField(fieldId)!)"
                       variant="neutral"
                       class="inline-flex items-center gap-1 normal-case tracking-normal"
-                      :aria-label="`${optionCount(findField(fieldId)!)} options`"
                     >
                       <List class="size-3" aria-hidden="true" />
                       <span class="tabular-nums">{{
                         optionCount(findField(fieldId)!)
                       }}</span>
+                      <span class="sr-only"> options</span>
                     </Badge>
+                    <span
+                      v-if="findField(fieldId)!.required"
+                      class="sr-only"
+                    >
+                      Required.
+                    </span>
                     <Asterisk
                       v-if="findField(fieldId)!.required"
                       class="size-4 text-danger"
-                      aria-label="Required"
+                      aria-hidden="true"
                     />
                   </span>
                 </button>
@@ -233,17 +264,7 @@ function bodyId(fieldId: string): string {
           >
             <div class="overflow-hidden">
               <div class="space-y-3 px-3 py-3 pl-10 md:p-4">
-                <div
-                  class="flex cursor-pointer items-start justify-between gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated"
-                  role="button"
-                  tabindex="0"
-                  :aria-expanded="true"
-                  :aria-controls="bodyId(fieldId)"
-                  :aria-label="`Collapse field ${findField(fieldId)!.label || 'untitled'}`"
-                  @click="collapse(fieldId)"
-                  @keydown.enter.prevent="collapse(fieldId)"
-                  @keydown.space.prevent="collapse(fieldId)"
-                >
+                <div class="flex items-start justify-between gap-3">
                   <div class="flex items-center gap-2">
                     <component
                       :is="fieldTypeIcon(findField(fieldId)!.type)"
@@ -256,11 +277,14 @@ function bodyId(fieldId: string): string {
                   </div>
                   <div class="flex items-center gap-2">
                     <label
-                      class="inline-flex items-center gap-2 text-sm text-fg"
-                      @click.stop
+                      class="inline-flex items-center gap-2 text-sm leading-relaxed text-fg"
+                      :for="requiredInputId(fieldId)"
                     >
                       <input
+                        :id="requiredInputId(fieldId)"
                         type="checkbox"
+                        class="rounded border-border-strong"
+                        :class="FOCUS_RING_CLASSES"
                         :checked="findField(fieldId)!.required"
                         @change="
                           store.setFieldRequired(
@@ -275,47 +299,52 @@ function bodyId(fieldId: string): string {
                       variant="ghost"
                       icon-only
                       size="sm"
-                      tabindex="-1"
                       :aria-label="`Collapse field ${findField(fieldId)!.label || 'untitled'}`"
                       :aria-expanded="true"
                       :aria-controls="bodyId(fieldId)"
-                      @click.stop="collapse(fieldId)"
+                      @click="collapse(fieldId)"
                     >
                       <ChevronUp class="size-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>
 
-                <label class="block space-y-1.5">
-                  <span class="block mb-1.5 text-sm font-medium text-fg"
-                    >Question</span
+                <div class="block space-y-1.5">
+                  <label
+                    class="block text-sm font-medium leading-snug text-fg"
+                    :for="labelInputId(fieldId)"
                   >
+                    Question
+                  </label>
                   <TextInput
+                    :id="labelInputId(fieldId)"
                     variant="bordered"
                     class="text-base font-medium"
                     :model-value="findField(fieldId)!.label"
                     placeholder="Untitled field"
-                    :aria-label="`Label for field ${fieldId}`"
                     @update:model-value="store.setFieldLabel(fieldId, $event)"
                     @blur="store.flushCoalesce()"
                   />
-                </label>
+                </div>
 
-                <label class="block space-y-1.5">
-                  <span class="block mb-1.5 text-sm font-medium text-fg"
-                    >Helper text</span
+                <div class="block space-y-1.5">
+                  <label
+                    class="block text-sm font-medium leading-snug text-fg"
+                    :for="descriptionInputId(fieldId)"
                   >
+                    Helper text
+                  </label>
                   <TextInput
+                    :id="descriptionInputId(fieldId)"
                     variant="bordered"
                     :model-value="findField(fieldId)!.description ?? ''"
                     placeholder="Optional"
-                    :aria-label="`Description for field ${fieldId}`"
                     @update:model-value="
                       store.setFieldDescription(fieldId, $event)
                     "
                     @blur="store.flushCoalesce()"
                   />
-                </label>
+                </div>
 
                 <template
                   v-if="
@@ -323,11 +352,15 @@ function bodyId(fieldId: string): string {
                     findField(fieldId)!.type === 'paragraph'
                   "
                 >
-                  <label class="block space-y-1.5">
-                    <span class="block mb-1.5 text-sm font-medium text-fg"
-                      >Placeholder</span
+                  <div class="block space-y-1.5">
+                    <label
+                      class="block text-sm font-medium leading-snug text-fg"
+                      :for="placeholderInputId(fieldId)"
                     >
+                      Placeholder
+                    </label>
                     <TextInput
+                      :id="placeholderInputId(fieldId)"
                       variant="bordered"
                       :model-value="
                         (
@@ -343,7 +376,7 @@ function bodyId(fieldId: string): string {
                       "
                       @blur="store.flushCoalesce()"
                     />
-                  </label>
+                  </div>
                 </template>
 
                 <template
@@ -354,7 +387,7 @@ function bodyId(fieldId: string): string {
                   "
                 >
                   <div class="space-y-2">
-                    <span class="block mb-1.5 text-sm font-medium text-fg"
+                    <span class="block text-sm font-medium leading-snug text-fg"
                       >Options</span
                     >
                     <FieldOptionList

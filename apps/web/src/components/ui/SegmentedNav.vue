@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import type { Component } from 'vue';
+import { FOCUS_RING_CLASSES } from '../../lib/focus-ring.ts';
 
 export interface SegmentedNavItem {
   to: string;
@@ -71,12 +72,11 @@ watch(
       v-for="item in items"
       :key="item.to"
       :to="item.to"
-      class="relative z-10 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-      :class="
-        isActive(item.to)
-          ? 'text-primary-fg'
-          : 'text-muted-fg hover:text-fg'
-      "
+      class="relative z-10 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium leading-snug transition-colors"
+      :class="[
+        FOCUS_RING_CLASSES,
+        isActive(item.to) ? 'text-primary-fg' : 'text-muted-fg hover:text-fg',
+      ]"
       :aria-current="isActive(item.to) ? 'page' : undefined"
     >
       <component

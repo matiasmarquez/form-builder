@@ -103,7 +103,7 @@ watch(
           <div class="space-y-2">
             <TextInput
               variant="inline-borderless"
-              class="px-2 py-1 -mx-2 text-3xl! font-semibold tracking-tight"
+              class="px-2 py-1 -mx-2 text-3xl! font-semibold leading-tight tracking-tight"
               :model-value="template.title"
               placeholder="Untitled Form"
               aria-label="Form title"
