@@ -35,8 +35,6 @@ function addField(type: Field["type"]): void {
     }
   }
 }
-
-console.log({ fieldTypeLabel: fieldTypeLabel("checkbox") });
 </script>
 
 <template>
@@ -44,12 +42,12 @@ console.log({ fieldTypeLabel: fieldTypeLabel("checkbox") });
     <h2
       class="text-base font-medium text-fg border-b border-border pb-4 -mx-4 px-4"
     >
-      Add elements
+      Agregar elementos
     </h2>
 
     <div class="space-y-2">
       <h3 class="text-xs uppercase tracking-wide text-muted-fg">
-        Text elements
+        Elementos de texto
       </h3>
       <div class="grid gap-1 grid-cols-1">
         <Button
@@ -77,7 +75,7 @@ console.log({ fieldTypeLabel: fieldTypeLabel("checkbox") });
 
     <div class="space-y-2">
       <h3 class="text-xs uppercase tracking-wide text-muted-fg">
-        Multi elements
+        Elementos de selección
       </h3>
       <div class="grid gap-1 grid-cols-1">
         <Button

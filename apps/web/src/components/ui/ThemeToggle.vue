@@ -8,7 +8,7 @@ const { effective, toggle } = useTheme();
 
 const isDark = computed(() => effective.value === 'dark');
 const label = computed(() =>
-  isDark.value ? 'Switch to light theme' : 'Switch to dark theme',
+  isDark.value ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
 );
 </script>
 

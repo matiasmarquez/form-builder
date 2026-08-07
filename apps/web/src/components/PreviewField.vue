@@ -77,9 +77,9 @@ const choiceInputClass = [
         :for="controlId"
         class="block text-base font-medium leading-snug text-fg"
       >
-        {{ field.label || 'Untitled field' }}
+        {{ field.label || 'Campo sin título' }}
         <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
-        <span v-if="field.required" class="sr-only"> (required)</span>
+        <span v-if="field.required" class="sr-only"> (obligatorio)</span>
       </label>
 
       <p
@@ -132,9 +132,9 @@ const choiceInputClass = [
         @change="onSelectChange"
         @blur="onBlur"
       >
-        <option value="" disabled>Select an option</option>
+        <option value="" disabled>Selecciona una opción</option>
         <option v-for="opt in field.options" :key="opt.id" :value="opt.id">
-          {{ opt.label || 'Untitled option' }}
+          {{ opt.label || 'Opción sin título' }}
         </option>
       </select>
     </template>
@@ -150,9 +150,9 @@ const choiceInputClass = [
       @focusout="onBlur($event)"
     >
       <legend class="text-base font-medium leading-snug text-fg">
-        {{ field.label || 'Untitled field' }}
+        {{ field.label || 'Campo sin título' }}
         <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
-        <span v-if="field.required" class="sr-only"> (required)</span>
+        <span v-if="field.required" class="sr-only"> (obligatorio)</span>
       </legend>
       <p
         v-if="field.description"
@@ -175,7 +175,7 @@ const choiceInputClass = [
           :class="choiceInputClass"
           @change="onRadioChange(opt.id)"
         />
-        <span>{{ opt.label || 'Untitled option' }}</span>
+        <span>{{ opt.label || 'Opción sin título' }}</span>
       </label>
     </fieldset>
 
@@ -190,9 +190,9 @@ const choiceInputClass = [
       @focusout="onBlur($event)"
     >
       <legend class="text-base font-medium leading-snug text-fg">
-        {{ field.label || 'Untitled field' }}
+        {{ field.label || 'Campo sin título' }}
         <span v-if="field.required" class="text-danger" aria-hidden="true"> *</span>
-        <span v-if="field.required" class="sr-only"> (required)</span>
+        <span v-if="field.required" class="sr-only"> (obligatorio)</span>
       </legend>
       <p
         v-if="field.description"
@@ -216,7 +216,7 @@ const choiceInputClass = [
             onCheckboxToggle(opt.id, ($event.target as HTMLInputElement).checked)
           "
         />
-        <span>{{ opt.label || 'Untitled option' }}</span>
+        <span>{{ opt.label || 'Opción sin título' }}</span>
       </label>
     </fieldset>
 

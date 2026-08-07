@@ -26,7 +26,7 @@ export function useUnsavedGuards(): void {
     if (!editor.isDirty) return true;
     // eslint-disable-next-line no-alert
     const proceed = window.confirm(
-      'You have unsaved changes. Leave and discard them?',
+      'Tienes cambios sin guardar. ¿Salir y descartarlos?',
     );
     return proceed;
   });

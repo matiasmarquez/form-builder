@@ -199,7 +199,7 @@ describe('editor store — save', () => {
     expect(transport.createCalls).toBe(0);
     expect(transport.updateCalls).toBe(0);
     expect(store.saveStatus).toBe('failed');
-    expect(store.lastSaveError).toMatch(/cycle/i);
+    expect(store.lastSaveError).toMatch(/ciclo/i);
     expect(store.isPersisted).toBe(false);
     expect(store.isDirty).toBe(true);
   });

@@ -15,7 +15,7 @@ export function duplicateTemplate(source: FormTemplate): FormTemplate {
   const now = Date.now();
   return {
     id: crypto.randomUUID(),
-    title: `${source.title} (copy)`,
+    title: `${source.title} (copia)`,
     description: source.description,
     fields,
     createdAt: now,

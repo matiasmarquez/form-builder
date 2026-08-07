@@ -102,7 +102,7 @@ export const templateListSchema = z.array(templateListItemSchema);
 
 // --- Runtime: FormResponse / Answer ---
 
-export const REQUIRED_FIELD_MESSAGE = 'This field is required';
+export const REQUIRED_FIELD_MESSAGE = 'Este campo es obligatorio';
 
 /** Free-text answer for `text` / `paragraph` fields. */
 export type TextAnswer = string;

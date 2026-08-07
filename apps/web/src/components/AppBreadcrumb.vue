@@ -30,21 +30,21 @@ const formTitle = computed(() => {
         ? fromPreview
         : (fromEditor ?? fromPreview);
   const title = template?.title?.trim();
-  return title && title.length > 0 ? title : 'Untitled Form';
+  return title && title.length > 0 ? title : 'Formulario sin título';
 });
 
 const sectionLabel = computed(() =>
-  route.name === 'form-preview' ? 'Preview' : 'Editor',
+  route.name === 'form-preview' ? 'Vista previa' : 'Editor',
 );
 
 const formEditTo = computed(() => `/forms/${formId.value}/edit`);
 </script>
 
 <template>
-  <nav class="min-w-0 text-sm" aria-label="Breadcrumb">
+  <nav class="min-w-0 text-sm" aria-label="Ruta de navegación">
     <!-- Home: current location only -->
     <span v-if="isHome" class="font-medium text-fg" aria-current="page">
-      Forms
+      Formularios
     </span>
 
     <!-- Form routes: Forms / title / section -->
@@ -55,7 +55,7 @@ const formEditTo = computed(() => `/forms/${formId.value}/edit`);
           class="rounded-md text-muted-fg hover:text-fg"
           :class="FOCUS_RING_CLASSES"
         >
-          Forms
+          Formularios
         </RouterLink>
       </li>
       <li class="hidden shrink-0 sm:flex sm:items-center" aria-hidden="true">

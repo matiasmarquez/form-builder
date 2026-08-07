@@ -22,7 +22,7 @@ const navItems = computed(() => [
   },
   {
     to: `/forms/${formId.value}/preview`,
-    label: "Preview",
+    label: "Vista previa",
     icon: Eye,
   },
 ]);
@@ -51,7 +51,7 @@ function redo(): void {
         icon-only
         size="md"
         :disabled="!canUndo"
-        aria-label="Undo"
+        aria-label="Deshacer"
         class="rounded-l-full rounded-r-none"
         @click="undo"
       >
@@ -63,7 +63,7 @@ function redo(): void {
         icon-only
         size="md"
         :disabled="!canRedo"
-        aria-label="Redo"
+        aria-label="Rehacer"
         class="rounded-r-full rounded-l-none"
         @click="redo"
       >

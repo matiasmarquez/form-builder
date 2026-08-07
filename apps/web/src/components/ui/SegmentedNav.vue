@@ -61,7 +61,7 @@ watch(
   <nav
     ref="navRef"
     class="relative inline-flex items-center rounded-full border border-border bg-surface-elevated p-1"
-    aria-label="Editor sections"
+    aria-label="Secciones del editor"
   >
     <span
       class="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-primary transition-[transform,width] duration-200 ease-out"

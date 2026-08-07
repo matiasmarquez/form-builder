@@ -10,7 +10,7 @@ import {
   type VisibilityRule,
 } from '@form-builder/shared';
 
-const REQUIRED_MSG = 'This field is required';
+const REQUIRED_MSG = 'Este campo es obligatorio';
 
 function template(fields: Field[]): FormTemplate {
   return {

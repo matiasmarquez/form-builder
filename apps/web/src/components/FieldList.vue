@@ -148,13 +148,18 @@ function requiredInputId(fieldId: string): string {
     v-if="ids.length === 0"
     class="rounded-md border border-dashed border-border p-8 text-center"
   >
-    <p class="text-fg">No fields yet.</p>
+    <p class="text-fg">Todavía no hay campos.</p>
     <p class="mt-1 text-sm text-muted-fg">
-      Pick a field type from the palette to get started.
+      Elige un tipo de campo en el panel para empezar.
     </p>
   </div>
 
-  <ul v-else ref="parentRef" class="space-y-3" aria-label="Form fields">
+  <ul
+    v-else
+    ref="parentRef"
+    class="space-y-3"
+    aria-label="Campos del formulario"
+  >
     <template v-for="fieldId in ids" :key="fieldId">
       <li v-if="findField(fieldId)" class="relative flex items-stretch gap-2">
         <div
@@ -180,7 +185,7 @@ function requiredInputId(fieldId: string): string {
                   :data-field-handle="fieldId"
                   class="absolute left-2 top-1/2 inline-flex -translate-y-1/2 cursor-grab rounded text-muted-fg hover:text-fg md:static md:translate-y-0"
                   :class="FOCUS_RING_CLASSES"
-                  :aria-label="`Reorder field ${findField(fieldId)!.label || 'untitled'}. Use arrow up and down to move.`"
+                  :aria-label="`Reordenar campo ${findField(fieldId)!.label || 'sin título'}. Usa flecha arriba y abajo para mover.`"
                   aria-keyshortcuts="ArrowUp ArrowDown"
                   @mousedown="onHandleMouseDown"
                   @keydown="onHandleKeydown($event, fieldId)"
@@ -203,14 +208,14 @@ function requiredInputId(fieldId: string): string {
                   <span
                     class="min-w-0 flex-1 truncate text-sm font-medium leading-snug text-fg"
                   >
-                    {{ findField(fieldId)!.label || "Untitled field" }}
+                    {{ findField(fieldId)!.label || "Campo sin título" }}
                   </span>
                   <span class="flex shrink-0 items-center gap-2">
                     <span
                       v-if="findField(fieldId)!.description"
                       class="sr-only"
                     >
-                      Has description.
+                      Tiene descripción.
                     </span>
                     <Info
                       v-if="findField(fieldId)!.description"
@@ -226,10 +231,10 @@ function requiredInputId(fieldId: string): string {
                       <span class="tabular-nums">{{
                         optionCount(findField(fieldId)!)
                       }}</span>
-                      <span class="sr-only"> options</span>
+                      <span class="sr-only"> opciones</span>
                     </Badge>
                     <span v-if="findField(fieldId)!.required" class="sr-only">
-                      Required.
+                      Obligatorio.
                     </span>
                     <Asterisk
                       v-if="findField(fieldId)!.required"
@@ -244,7 +249,7 @@ function requiredInputId(fieldId: string): string {
                     variant="ghost"
                     icon-only
                     size="sm"
-                    :aria-label="`Edit field ${findField(fieldId)!.label || 'untitled'}`"
+                    :aria-label="`Editar campo ${findField(fieldId)!.label || 'sin título'}`"
                     class="text-muted-fg/80 hover:text-fg"
                     @click.stop="expand(fieldId)"
                   >
@@ -255,7 +260,7 @@ function requiredInputId(fieldId: string): string {
                     icon-only
                     size="sm"
                     class="text-muted-fg/80 hover:text-danger"
-                    :aria-label="`Delete field ${findField(fieldId)!.label || 'untitled'}`"
+                    :aria-label="`Eliminar campo ${findField(fieldId)!.label || 'sin título'}`"
                     @click.stop="store.deleteField(fieldId)"
                   >
                     <Trash2 class="size-4" aria-hidden="true" />
@@ -281,7 +286,7 @@ function requiredInputId(fieldId: string): string {
                   tabindex="0"
                   :aria-expanded="true"
                   :aria-controls="bodyId(fieldId)"
-                  :aria-label="`Collapse field ${findField(fieldId)!.label || 'untitled'}`"
+                  :aria-label="`Contraer campo ${findField(fieldId)!.label || 'sin título'}`"
                   @click="collapse(fieldId)"
                   @keydown.enter.prevent="collapse(fieldId)"
                   @keydown.space.prevent="collapse(fieldId)"
@@ -315,14 +320,14 @@ function requiredInputId(fieldId: string): string {
                           )
                         "
                       />
-                      Required
+                      Obligatorio
                     </label>
                     <Button
                       variant="ghost"
                       icon-only
                       size="sm"
                       tabindex="-1"
-                      :aria-label="`Collapse field ${findField(fieldId)!.label || 'untitled'}`"
+                      :aria-label="`Contraer campo ${findField(fieldId)!.label || 'sin título'}`"
                       :aria-expanded="true"
                       :aria-controls="bodyId(fieldId)"
                       @click.stop="collapse(fieldId)"
@@ -337,13 +342,13 @@ function requiredInputId(fieldId: string): string {
                     class="block text-sm font-medium leading-snug text-fg"
                     :for="labelInputId(fieldId)"
                   >
-                    Question
+                    Label
                   </label>
                   <TextInput
                     :id="labelInputId(fieldId)"
                     variant="bordered"
                     :model-value="findField(fieldId)!.label"
-                    placeholder="Untitled field"
+                    placeholder="Campo sin título"
                     @update:model-value="store.setFieldLabel(fieldId, $event)"
                     @blur="store.flushCoalesce()"
                   />
@@ -354,13 +359,13 @@ function requiredInputId(fieldId: string): string {
                     class="block text-sm font-medium leading-snug text-fg"
                     :for="descriptionInputId(fieldId)"
                   >
-                    Helper text
+                    Texto de ayuda
                   </label>
                   <TextInput
                     :id="descriptionInputId(fieldId)"
                     variant="bordered"
                     :model-value="findField(fieldId)!.description ?? ''"
-                    placeholder="Optional"
+                    placeholder="Opcional"
                     @update:model-value="
                       store.setFieldDescription(fieldId, $event)
                     "
@@ -392,7 +397,7 @@ function requiredInputId(fieldId: string): string {
                           >
                         ).placeholder ?? ''
                       "
-                      placeholder="Shown to respondents"
+                      placeholder="Visible para quienes responden"
                       @update:model-value="
                         store.setTextFieldPlaceholder(fieldId, $event)
                       "
@@ -410,7 +415,7 @@ function requiredInputId(fieldId: string): string {
                 >
                   <div class="space-y-2">
                     <span class="block text-sm font-medium leading-snug text-fg"
-                      >Options</span
+                      >Opciones</span
                     >
                     <FieldOptionList
                       :field-id="fieldId"
@@ -421,7 +426,7 @@ function requiredInputId(fieldId: string): string {
                       size="sm"
                       @click="store.addFieldOption(fieldId)"
                     >
-                      + Add option
+                      + Agregar opción
                     </Button>
                   </div>
                 </template>
@@ -434,7 +439,7 @@ function requiredInputId(fieldId: string): string {
                     icon-only
                     size="sm"
                     class="text-danger hover:text-danger"
-                    :aria-label="`Delete field ${findField(fieldId)!.label || 'untitled'}`"
+                    :aria-label="`Eliminar campo ${findField(fieldId)!.label || 'sin título'}`"
                     @click="store.deleteField(fieldId)"
                   >
                     <Trash2 class="size-4" aria-hidden="true" />

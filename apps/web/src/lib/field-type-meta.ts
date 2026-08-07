@@ -11,13 +11,13 @@ import type { Component } from 'vue';
 export function fieldTypeLabel(type: Field['type']): string {
   switch (type) {
     case 'text':
-      return 'Short answer';
+      return 'Respuesta corta';
     case 'paragraph':
-      return 'Paragraph';
+      return 'Párrafo';
     case 'checkbox':
       return 'Checkboxes';
     case 'radio':
-      return 'Multiple choice';
+      return 'Opción múltiple';
     case 'select':
       return 'Dropdown';
     default: {

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import type { FormTemplate } from '@form-builder/shared';
 import { usePreviewStore } from './preview.ts';
 
-const REQUIRED_MSG = 'This field is required';
+const REQUIRED_MSG = 'Este campo es obligatorio';
 
 function makeTemplate(overrides: Partial<FormTemplate> = {}): FormTemplate {
   return {

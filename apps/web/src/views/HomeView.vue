@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import type { TemplateListItem } from '@form-builder/shared';
-import { Copy, Eye, Pencil, Plus, Trash2 } from 'lucide-vue-next';
-import { createTemplate, deleteTemplate, fetchTemplate, fetchTemplateList } from '../api.ts';
-import { duplicateTemplate } from '../lib/duplicate.ts';
-import Alert from '../components/ui/Alert.vue';
-import Button from '../components/ui/Button.vue';
-import Card from '../components/ui/Card.vue';
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import type { TemplateListItem } from "@form-builder/shared";
+import { Copy, Eye, Pencil, Plus, Trash2 } from "lucide-vue-next";
+import {
+  createTemplate,
+  deleteTemplate,
+  fetchTemplate,
+  fetchTemplateList,
+} from "../api.ts";
+import { duplicateTemplate } from "../lib/duplicate.ts";
+import Alert from "../components/ui/Alert.vue";
+import Button from "../components/ui/Button.vue";
+import Card from "../components/ui/Card.vue";
 
 const router = useRouter();
 
-type LoadState = 'loading' | 'ready' | 'error';
+type LoadState = "loading" | "ready" | "error";
 
-const state = ref<LoadState>('loading');
+const state = ref<LoadState>("loading");
 const errorMessage = ref<string | null>(null);
 const templates = ref<TemplateListItem[]>([]);
 const deleteErrorMessage = ref<string | null>(null);
@@ -25,19 +30,21 @@ const duplicateErrorMessage = ref<string | null>(null);
 const duplicateErrorId = ref<string | null>(null);
 
 const sortedTemplates = computed(() =>
-  [...templates.value].sort((a, b) => b.updatedAt - a.updatedAt),
+  [...templates.value].sort((a, b) => b.updatedAt - a.updatedAt)
 );
 
-const isEmpty = computed(() => state.value === 'ready' && sortedTemplates.value.length === 0);
+const isEmpty = computed(
+  () => state.value === "ready" && sortedTemplates.value.length === 0
+);
 
 async function loadTemplates(): Promise<void> {
-  state.value = 'loading';
+  state.value = "loading";
   errorMessage.value = null;
   try {
     templates.value = await fetchTemplateList();
-    state.value = 'ready';
+    state.value = "ready";
   } catch (err) {
-    state.value = 'error';
+    state.value = "error";
     errorMessage.value = err instanceof Error ? err.message : String(err);
   }
 }
@@ -90,7 +97,8 @@ async function duplicate(id: string): Promise<void> {
       { id: copy.id, title: copy.title, updatedAt: copy.updatedAt },
     ];
   } catch (err) {
-    duplicateErrorMessage.value = err instanceof Error ? err.message : String(err);
+    duplicateErrorMessage.value =
+      err instanceof Error ? err.message : String(err);
     duplicateErrorId.value = id;
   } finally {
     duplicatingIds.value.delete(id);
@@ -98,20 +106,20 @@ async function duplicate(id: string): Promise<void> {
 }
 
 function displayTitle(t: TemplateListItem): string {
-  return t.title.trim() === '' ? 'Untitled Form' : t.title;
+  return t.title.trim() === "" ? "Formulario sin título" : t.title;
 }
 
 function formatUpdatedAt(ts: number): string {
   const diff = Date.now() - ts;
   const seconds = Math.max(0, Math.round(diff / 1000));
-  if (seconds < 45) return 'just now';
+  if (seconds < 45) return "hace un momento";
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  if (minutes < 60) return `hace ${minutes} minuto${minutes === 1 ? "" : "s"}`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  if (hours < 24) return `hace ${hours} hora${hours === 1 ? "" : "s"}`;
   const days = Math.round(hours / 24);
-  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
-  return new Date(ts).toLocaleDateString();
+  if (days < 30) return `hace ${days} día${days === 1 ? "" : "s"}`;
+  return new Date(ts).toLocaleDateString("es-419");
 }
 
 onMounted(() => {
@@ -120,21 +128,25 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24">
+  <section
+    class="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24"
+  >
     <div class="flex items-center justify-end gap-4">
       <Button variant="primary" @click="newForm">
         <Plus class="size-4" aria-hidden="true" />
-        New form
+        Nuevo formulario
       </Button>
     </div>
 
-    <p v-if="state === 'loading'" class="text-sm text-muted-fg">Loading forms…</p>
+    <p v-if="state === 'loading'" class="text-sm text-muted-fg">
+      Cargando formularios…
+    </p>
 
     <Alert v-else-if="state === 'error'" variant="danger">
-      <p class="font-medium">Couldn't load forms.</p>
+      <p class="font-medium">No se pudieron cargar los formularios.</p>
       <p v-if="errorMessage" class="mt-1">{{ errorMessage }}</p>
       <Button variant="secondary" size="sm" class="mt-3" @click="loadTemplates">
-        Retry
+        Reintentar
       </Button>
     </Alert>
 
@@ -142,20 +154,18 @@ onMounted(() => {
       v-else-if="isEmpty"
       class="border-dashed p-8 text-center border border-border rounded-lg bg-surface-elevated/80"
     >
-      <p class="text-fg">No forms yet.</p>
+      <p class="text-fg">Todavía no hay formularios.</p>
       <p class="mt-1 text-sm text-muted-fg">
-        Click <span class="font-medium">+ New form</span> to start building one.
+        Haz clic en <span class="font-medium">+ Nuevo formulario</span> para
+        empezar a crear uno.
       </p>
       <Button variant="primary" class="mt-4" @click="newForm">
         <Plus class="size-4" aria-hidden="true" />
-        New form
+        Nuevo formulario
       </Button>
     </Card>
 
-    <ul
-      v-else
-      class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-    >
+    <ul v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <li v-for="t in sortedTemplates" :key="t.id">
         <Card class="flex h-full flex-col gap-4 p-4">
           <div class="min-w-0 flex-1">
@@ -163,36 +173,40 @@ onMounted(() => {
               {{ displayTitle(t) }}
             </h2>
             <p class="mt-1 text-xs uppercase tracking-wide text-muted-fg">
-              Updated {{ formatUpdatedAt(t.updatedAt) }}
+              Actualizado {{ formatUpdatedAt(t.updatedAt) }}
             </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-1">
             <template v-if="confirmingId === t.id">
-              <span class="mr-1 text-sm text-fg">Delete this form?</span>
-              <Button
-                variant="danger"
-                size="sm"
-                :disabled="deletingIds.has(t.id)"
-                @click="confirmDelete(t.id)"
+              <span class="mb-2 text-sm text-fg"
+                >¿Eliminar este formulario?</span
               >
-                {{ deletingIds.has(t.id) ? 'Deleting…' : 'Confirm' }}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                :disabled="deletingIds.has(t.id)"
-                @click="cancelDelete"
-              >
-                Cancel
-              </Button>
+              <div class="flex flex-wrap items-center gap-1">
+                <Button
+                  variant="danger"
+                  size="sm"
+                  :disabled="deletingIds.has(t.id)"
+                  @click="confirmDelete(t.id)"
+                >
+                  {{ deletingIds.has(t.id) ? "Eliminando…" : "Confirmar" }}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  :disabled="deletingIds.has(t.id)"
+                  @click="cancelDelete"
+                >
+                  Cancelar
+                </Button>
+              </div>
             </template>
             <template v-else>
               <Button
                 variant="ghost"
                 icon-only
                 size="md"
-                :aria-label="`Edit ${displayTitle(t)}`"
+                :aria-label="`Editar ${displayTitle(t)}`"
                 @click="router.push(`/forms/${t.id}/edit`)"
               >
                 <Pencil class="size-5" aria-hidden="true" />
@@ -201,7 +215,7 @@ onMounted(() => {
                 variant="ghost"
                 icon-only
                 size="md"
-                :aria-label="`Preview ${displayTitle(t)}`"
+                :aria-label="`Vista previa de ${displayTitle(t)}`"
                 @click="router.push(`/forms/${t.id}/preview`)"
               >
                 <Eye class="size-5" aria-hidden="true" />
@@ -212,7 +226,7 @@ onMounted(() => {
                 size="md"
                 :disabled="duplicatingIds.has(t.id)"
                 :loading="duplicatingIds.has(t.id)"
-                :aria-label="`Duplicate ${displayTitle(t)}`"
+                :aria-label="`Duplicar ${displayTitle(t)}`"
                 @click="duplicate(t.id)"
               >
                 <Copy class="size-5" aria-hidden="true" />
@@ -222,7 +236,7 @@ onMounted(() => {
                 icon-only
                 size="md"
                 class="text-danger hover:text-danger"
-                :aria-label="`Delete ${displayTitle(t)}`"
+                :aria-label="`Eliminar ${displayTitle(t)}`"
                 @click="askDelete(t.id)"
               >
                 <Trash2 class="size-5" aria-hidden="true" />
@@ -235,14 +249,14 @@ onMounted(() => {
             role="alert"
             class="text-xs text-danger-fg"
           >
-            Couldn't delete this form: {{ deleteErrorMessage }}
+            No se pudo eliminar este formulario: {{ deleteErrorMessage }}
           </p>
           <p
             v-if="duplicateErrorId === t.id && duplicateErrorMessage"
             role="alert"
             class="text-xs text-danger-fg"
           >
-            Couldn't duplicate this form: {{ duplicateErrorMessage }}
+            No se pudo duplicar este formulario: {{ duplicateErrorMessage }}
           </p>
         </Card>
       </li>

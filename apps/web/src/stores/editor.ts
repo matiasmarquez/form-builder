@@ -23,7 +23,7 @@ import { changedFieldIds } from '../lib/changed-field-ids.ts';
 export class VisibilityCycleError extends Error {
   constructor(public readonly fieldIds: readonly FieldId[]) {
     super(
-      `Cannot save: conditional visibility rules form a cycle (${fieldIds.join(' → ')}).`,
+      `No se puede guardar: las reglas de visibilidad condicional forman un ciclo (${fieldIds.join(' → ')}).`,
     );
     this.name = 'VisibilityCycleError';
   }
@@ -59,7 +59,7 @@ export function setTemplateSaveTransport(transport: TemplateSaveTransport | null
 export function createEmptyTemplate(id: string, now: number = Date.now()): FormTemplate {
   return {
     id,
-    title: 'Untitled Form',
+    title: 'Formulario sin título',
     description: '',
     fields: [],
     createdAt: now,

@@ -87,7 +87,7 @@ watch(
 
 <template>
   <div
-    class="editor-dot-grid min-h-screen px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-24"
+    class="editor-dot-grid min-h-screen px-4 pb-8 pt-20 sm:px-6 sm:pb-10 sm:pt-28"
   >
     <section v-if="template" class="mx-auto max-w-5xl space-y-4">
       <EditorToolbar />
@@ -106,8 +106,8 @@ watch(
               variant="inline-borderless"
               class="px-2 py-1 -mx-2 text-2xl md:text-3xl font-semibold leading-tight tracking-tight"
               :model-value="template.title"
-              placeholder="Untitled Form"
-              aria-label="Form title"
+              placeholder="Formulario sin título"
+              aria-label="Título del formulario"
               @update:model-value="store.setTitle($event)"
               @blur="store.flushCoalesce()"
             />
@@ -116,8 +116,8 @@ watch(
               class="resize-none px-2 py-1 -mx-2 md:text-lg text-base"
               :rows="2"
               :model-value="template.description"
-              placeholder="Add a description for respondents…"
-              aria-label="Form description"
+              placeholder="Agrega una descripción para quienes responden…"
+              aria-label="Descripción del formulario"
               @update:model-value="store.setDescription($event)"
               @blur="store.flushCoalesce()"
             />

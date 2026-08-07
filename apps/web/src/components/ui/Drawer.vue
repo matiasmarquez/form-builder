@@ -91,7 +91,7 @@ onBeforeUnmount(() => {
       :class="open ? 'translate-x-0' : '-translate-x-full pointer-events-none'"
       role="dialog"
       aria-modal="true"
-      :aria-label="title ?? 'Drawer'"
+      :aria-label="title ?? 'Panel'"
       :aria-hidden="!open"
       :inert="!open"
       tabindex="-1"
@@ -103,10 +103,10 @@ onBeforeUnmount(() => {
           type="button"
           class="rounded-md px-2 py-1 text-sm text-muted-fg hover:text-fg"
           :class="FOCUS_RING_CLASSES"
-          aria-label="Close drawer"
+          aria-label="Cerrar panel"
           @click="close"
         >
-          Close
+          Cerrar
         </button>
       </div>
       <div class="flex-1 overflow-y-auto p-4">

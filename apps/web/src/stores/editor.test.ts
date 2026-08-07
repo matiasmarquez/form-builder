@@ -247,7 +247,7 @@ describe('editor store history', () => {
       const store = initStore();
       const depth = store.undoDepth;
 
-      store.setTitle('Untitled Form');
+      store.setTitle('Formulario sin título');
       vi.advanceTimersByTime(600);
 
       expect(store.undoDepth).toBe(depth);

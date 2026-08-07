@@ -88,8 +88,8 @@ function onChangeOption(event: Event): void {
 
 const relationLabel = computed(() => {
   const src = sourceField.value;
-  if (!src) return "is";
-  return src.type === "checkbox" ? "includes" : "is";
+  if (!src) return "es";
+  return src.type === "checkbox" ? "incluye" : "es";
 });
 
 const selectClass = [
@@ -107,7 +107,7 @@ const selectClass = [
           class="size-4 text-muted-fg"
           aria-hidden="true"
         />
-        <span>Conditional visibility</span>
+        <span>Visibilidad condicional</span>
       </div>
       <Button
         v-if="!rule"
@@ -116,10 +116,10 @@ const selectClass = [
         :disabled="!hasEligibleSource"
         @click="onEnable"
       >
-        Add rule
+        Agregar regla
       </Button>
       <Button v-else variant="ghost" size="sm" @click="onDisable">
-        Remove rule
+        Quitar regla
       </Button>
     </div>
 
@@ -127,15 +127,15 @@ const selectClass = [
       v-if="!rule && !hasEligibleSource"
       class="text-xs leading-relaxed text-muted-fg"
     >
-      Add a radio, select, or checkbox field earlier in the form to gate this
-      field on its answer.
+      Agrega antes un campo de opción múltiple, Dropdown o Checkboxes para condicionar este
+      campo según su respuesta.
     </p>
 
     <div
       v-else-if="rule && sourceField && isChoiceField(sourceField)"
       class="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center"
     >
-      <label class="sr-only" :for="selectId">Source field</label>
+      <label class="sr-only" :for="selectId">Campo de origen</label>
       <select
         :id="selectId"
         :class="selectClass"
@@ -148,13 +148,13 @@ const selectClass = [
           :key="candidate.id"
           :value="candidate.id"
         >
-          {{ candidate.label || "Untitled field" }}
+          {{ candidate.label || "Campo sin título" }}
         </option>
       </select>
 
       <span class="text-xs text-muted-fg text-center">{{ relationLabel }}</span>
 
-      <label class="sr-only" :for="optionSelectId">Option</label>
+      <label class="sr-only" :for="optionSelectId">Opción</label>
       <select
         :id="optionSelectId"
         :class="selectClass"
@@ -167,7 +167,7 @@ const selectClass = [
           :key="opt.id"
           :value="opt.id"
         >
-          {{ opt.label || "Untitled option" }}
+          {{ opt.label || "Opción sin título" }}
         </option>
       </select>
     </div>

@@ -106,15 +106,15 @@ onBeforeUnmount(() => {
 const statusLabel = computed(() => {
   switch (displayKind.value) {
     case "new":
-      return "Not saved yet";
+      return "Aún no se guardó";
     case "saving":
-      return "Saving…";
+      return "Guardando…";
     case "failed":
-      return "Failed — retry";
+      return "Error — reintentar";
     case "unsaved":
-      return "Unsaved changes";
+      return "Cambios sin guardar";
     case "saved":
-      return "Saved";
+      return "Guardado";
     default: {
       const _exhaustive: never = displayKind.value;
       return _exhaustive;
@@ -189,7 +189,7 @@ const statusLabel = computed(() => {
         size="sm"
         @click="props.onSave()"
       >
-        Retry
+        Reintentar
       </Button>
     </div>
 
@@ -208,7 +208,7 @@ const statusLabel = computed(() => {
             autosave.setEnabled(($event.target as HTMLInputElement).checked)
           "
         />
-        Autosave
+        Autoguardado
       </label>
       <Button
         variant="primary"
@@ -217,7 +217,7 @@ const statusLabel = computed(() => {
         data-testid="save-button"
         @click="props.onSave()"
       >
-        Save
+        Guardar
       </Button>
     </div>
   </div>

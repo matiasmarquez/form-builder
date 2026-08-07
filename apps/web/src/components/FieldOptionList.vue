@@ -73,7 +73,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
   <ul
     ref="parentRef"
     class="space-y-2"
-    :aria-label="`Options for ${fieldLabel || 'untitled field'}`"
+    :aria-label="`Opciones de ${fieldLabel || 'campo sin título'}`"
   >
     <li
       v-for="(optionId, index) in ids"
@@ -85,9 +85,9 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         :data-option-handle="optionId"
         class="cursor-grab rounded px-1 text-muted-fg hover:text-fg"
         :class="FOCUS_RING_CLASSES"
-        :aria-label="`Reorder option ${
+        :aria-label="`Reordenar opción ${
           optionIndex(optionId) + 1
-        }. Use arrow up and down to move.`"
+        }. Usa flecha arriba y abajo para mover.`"
         aria-keyshortcuts="ArrowUp ArrowDown"
         @mousedown="onHandleMouseDown"
         @keydown="onHandleKeydown($event, optionId)"
@@ -111,14 +111,14 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         >{{ index + 1 }}.</span
       >
       <label :for="optionLabelId(optionId)" class="sr-only">
-        Option {{ index + 1 }} label
+        Etiqueta de la opción {{ index + 1 }}
       </label>
       <input
         :id="optionLabelId(optionId)"
         :value="findOption(optionId)?.label ?? ''"
         class="flex-1 rounded-md border-b border-transparent bg-transparent py-1 text-sm leading-relaxed text-fg placeholder:text-muted-fg focus:border-border"
         :class="FOCUS_RING_CLASSES"
-        :placeholder="`Option ${index + 1}`"
+        :placeholder="`Opción ${index + 1}`"
         @input="
           store.setFieldOptionLabel(
             fieldId,
@@ -133,12 +133,12 @@ const canDeleteMore = computed(() => ids.value.length > 1);
         size="sm"
         class="text-xs text-muted-fg hover:text-danger"
         :disabled="!canDeleteMore"
-        :aria-label="`Delete option ${
+        :aria-label="`Eliminar opción ${
           findOption(optionId)?.label || index + 1
         }`"
         @click="store.deleteFieldOption(fieldId, optionId)"
       >
-        Remove
+        Quitar
       </Button>
     </li>
   </ul>

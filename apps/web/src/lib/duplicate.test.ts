@@ -33,9 +33,9 @@ function makeTemplate(): FormTemplate {
 }
 
 describe('duplicateTemplate', () => {
-  it('suffixes the title with " (copy)"', () => {
+  it('suffixes the title with " (copia)"', () => {
     const copy = duplicateTemplate(makeTemplate());
-    expect(copy.title).toBe('Original (copy)');
+    expect(copy.title).toBe('Original (copia)');
   });
 
   it('regenerates ids at every level', () => {

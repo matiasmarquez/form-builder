@@ -81,16 +81,16 @@ watch(
       <EditorToolbar />
 
       <Alert v-if="loadState === 'loading'" variant="info">
-        Loading preview…
+        Cargando vista previa…
       </Alert>
 
       <Alert v-else-if="loadState === 'not-found'" variant="info">
-        <p class="font-medium">Form not found.</p>
-        <p class="mt-1 text-muted-fg">This form may have been deleted.</p>
+        <p class="font-medium">Formulario no encontrado.</p>
+        <p class="mt-1 text-muted-fg">Es posible que este formulario se haya eliminado.</p>
       </Alert>
 
       <Alert v-else-if="loadState === 'error'" variant="danger">
-        <p class="font-medium">Couldn't load this form.</p>
+        <p class="font-medium">No se pudo cargar este formulario.</p>
         <p v-if="loadError" class="mt-1">{{ loadError }}</p>
         <Button
           variant="secondary"
@@ -98,7 +98,7 @@ watch(
           class="mt-3"
           @click="seedFromRoute"
         >
-          Retry
+          Reintentar
         </Button>
       </Alert>
 
@@ -109,13 +109,13 @@ watch(
       >
         <PartyPopper class="mx-auto size-16 text-primary" aria-hidden="true" />
         <h1 class="text-2xl font-semibold leading-tight tracking-tight text-fg">
-          Response recorded
+          Respuesta registrada
         </h1>
         <p class="text-sm leading-relaxed text-muted-fg">
-          This is a preview — no data was actually submitted.
+          Esto es una vista previa: no se envió ningún dato.
         </p>
         <Button variant="primary" @click="store.loadTemplate(template)">
-          Submit another response
+          Enviar otra respuesta
         </Button>
         <div>
           <RouterLink
@@ -123,7 +123,7 @@ watch(
             class="rounded-md text-sm leading-relaxed text-primary hover:underline"
             :class="FOCUS_RING_CLASSES"
           >
-            ← Back to forms
+            ← Volver a formularios
           </RouterLink>
         </div>
       </Card>
@@ -138,7 +138,7 @@ watch(
           <h1
             class="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-fg"
           >
-            {{ template.title || "Untitled Form" }}
+            {{ template.title || "Formulario sin título" }}
           </h1>
           <p
             v-if="template.description"
@@ -152,7 +152,7 @@ watch(
           v-if="template.fields.length === 0"
           class="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-fg"
         >
-          This form has no fields yet.
+          Este formulario todavía no tiene campos.
         </div>
 
         <div v-else class="space-y-8">
@@ -164,7 +164,7 @@ watch(
         </div>
 
         <div class="pt-2 text-right">
-          <Button type="submit" variant="primary" size="md">Submit</Button>
+          <Button type="submit" variant="primary" size="md">Enviar</Button>
         </div>
       </form>
     </section>
