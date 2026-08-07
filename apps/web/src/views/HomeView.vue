@@ -140,7 +140,7 @@ onMounted(() => {
 
     <Card
       v-else-if="isEmpty"
-      class="border-dashed p-8 text-center"
+      class="border-dashed p-8 text-center border border-border rounded-lg bg-surface-elevated/80"
     >
       <p class="text-fg">No forms yet.</p>
       <p class="mt-1 text-sm text-muted-fg">

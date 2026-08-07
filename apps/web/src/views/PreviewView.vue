@@ -130,12 +130,14 @@ watch(
 
       <form
         v-else-if="template"
-        class="space-y-8 mx-auto max-w-3xl"
+        class="space-y-8 mx-auto max-w-3xl border border-border rounded-lg p-4 bg-surface-elevated/80"
         novalidate
         @submit="onSubmit"
       >
         <header class="space-y-2 border-b border-border pb-6">
-          <h1 class="text-3xl font-semibold leading-tight tracking-tight text-fg">
+          <h1
+            class="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-fg"
+          >
             {{ template.title || "Untitled Form" }}
           </h1>
           <p
@@ -161,7 +163,7 @@ watch(
           />
         </div>
 
-        <div class="pt-2">
+        <div class="pt-2 text-right">
           <Button type="submit" variant="primary" size="md">Submit</Button>
         </div>
       </form>
