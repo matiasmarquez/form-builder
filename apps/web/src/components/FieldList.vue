@@ -274,7 +274,18 @@ function requiredInputId(fieldId: string): string {
           >
             <div class="overflow-hidden">
               <div class="space-y-3 p-4">
-                <div class="flex items-center justify-between gap-3">
+                <div
+                  class="flex cursor-pointer items-center justify-between gap-3 rounded-md"
+                  :class="FOCUS_RING_CLASSES"
+                  role="button"
+                  tabindex="0"
+                  :aria-expanded="true"
+                  :aria-controls="bodyId(fieldId)"
+                  :aria-label="`Collapse field ${findField(fieldId)!.label || 'untitled'}`"
+                  @click="collapse(fieldId)"
+                  @keydown.enter.prevent="collapse(fieldId)"
+                  @keydown.space.prevent="collapse(fieldId)"
+                >
                   <div class="flex items-center gap-2">
                     <component
                       :is="fieldTypeIcon(findField(fieldId)!.type)"
@@ -289,6 +300,7 @@ function requiredInputId(fieldId: string): string {
                     <label
                       class="inline-flex items-center gap-2 text-sm leading-relaxed text-fg"
                       :for="requiredInputId(fieldId)"
+                      @click.stop
                     >
                       <input
                         :id="requiredInputId(fieldId)"
@@ -309,10 +321,11 @@ function requiredInputId(fieldId: string): string {
                       variant="ghost"
                       icon-only
                       size="sm"
+                      tabindex="-1"
                       :aria-label="`Collapse field ${findField(fieldId)!.label || 'untitled'}`"
                       :aria-expanded="true"
                       :aria-controls="bodyId(fieldId)"
-                      @click="collapse(fieldId)"
+                      @click.stop="collapse(fieldId)"
                     >
                       <ChevronUp class="size-4" aria-hidden="true" />
                     </Button>
