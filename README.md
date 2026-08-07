@@ -1,6 +1,6 @@
 # 📝 Form Builder
 
-A Google Forms–style app: design templates in a Vue editor, fill them in preview mode, and persist everything with a small Hono + SQLite API.
+Design form templates in a Vue editor, fill them in preview mode, and persist everything with a small Hono + SQLite API.
 
 ## ✨ Tech stack
 
