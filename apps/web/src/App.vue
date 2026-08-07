@@ -12,7 +12,9 @@ useTheme();
     <div class="flex-1">
       <RouterView />
     </div>
-    <footer class="px-4 pb-4 pt-2 text-center sm:px-6 fixed bottom-2 w-full">
+    <footer
+      class="px-4 pb-4 pt-2 text-center sm:px-6 hidden md:fixed bottom-2 w-full"
+    >
       <p class="text-xs tracking-wide text-muted-fg/60">crafted by mati</p>
     </footer>
   </div>

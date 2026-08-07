@@ -104,7 +104,7 @@ watch(
           <div class="space-y-2">
             <TextInput
               variant="inline-borderless"
-              class="px-2 py-1 -mx-2 text-3xl font-semibold leading-tight tracking-tight"
+              class="px-2 py-1 -mx-2 text-2xl md:text-3xl font-semibold leading-tight tracking-tight"
               :model-value="template.title"
               placeholder="Untitled Form"
               aria-label="Form title"
@@ -113,7 +113,7 @@ watch(
             />
             <Textarea
               variant="inline-borderless"
-              class="resize-none px-2 py-1 -mx-2 text-lg"
+              class="resize-none px-2 py-1 -mx-2 md:text-lg text-base"
               :rows="2"
               :model-value="template.description"
               placeholder="Add a description for respondents…"

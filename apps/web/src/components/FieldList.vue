@@ -154,12 +154,7 @@ function requiredInputId(fieldId: string): string {
     </p>
   </div>
 
-  <ul
-    v-else
-    ref="parentRef"
-    class="space-y-3"
-    aria-label="Form fields"
-  >
+  <ul v-else ref="parentRef" class="space-y-3" aria-label="Form fields">
     <template v-for="fieldId in ids" :key="fieldId">
       <li v-if="findField(fieldId)" class="relative flex items-stretch gap-2">
         <div
@@ -278,8 +273,8 @@ function requiredInputId(fieldId: string): string {
             :inert="!isExpanded(fieldId)"
           >
             <div class="overflow-hidden">
-              <div class="space-y-3 px-3 py-3 pl-10 md:p-4">
-                <div class="flex items-start justify-between gap-3">
+              <div class="space-y-3 p-4">
+                <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2">
                     <component
                       :is="fieldTypeIcon(findField(fieldId)!.type)"
@@ -298,7 +293,7 @@ function requiredInputId(fieldId: string): string {
                       <input
                         :id="requiredInputId(fieldId)"
                         type="checkbox"
-                        class="rounded border-border-strong"
+                        class="rounded border-border-strong font-sm md:font-base"
                         :class="FOCUS_RING_CLASSES"
                         :checked="findField(fieldId)!.required"
                         @change="
@@ -334,7 +329,6 @@ function requiredInputId(fieldId: string): string {
                   <TextInput
                     :id="labelInputId(fieldId)"
                     variant="bordered"
-                    class="text-base font-medium"
                     :model-value="findField(fieldId)!.label"
                     placeholder="Untitled field"
                     @update:model-value="store.setFieldLabel(fieldId, $event)"

@@ -49,7 +49,7 @@ function addField(type: Field["type"]): void {
       <h3 class="text-xs uppercase tracking-wide text-muted-fg">
         Text elements
       </h3>
-      <div class="grid grid-cols-2 gap-1 lg:grid-cols-1">
+      <div class="grid gap-1 grid-cols-1">
         <Button
           v-for="type in TEXT_FIELD_TYPES"
           :key="type"
@@ -77,7 +77,7 @@ function addField(type: Field["type"]): void {
       <h3 class="text-xs uppercase tracking-wide text-muted-fg">
         Multi elements
       </h3>
-      <div class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+      <div class="grid gap-1 sm:grid-cols-3 grid-cols-1">
         <Button
           v-for="type in MULTI_FIELD_TYPES"
           :key="type"
