@@ -4,6 +4,7 @@ import type { Field } from "@form-builder/shared";
 import {
   Asterisk,
   ChevronUp,
+  GitBranch,
   GripVertical,
   Info,
   List,
@@ -217,6 +218,14 @@ function requiredInputId(fieldId: string): string {
                     <Info
                       v-if="findField(fieldId)!.description"
                       class="size-3 text-indigo-400"
+                      aria-hidden="true"
+                    />
+                    <span v-if="findField(fieldId)!.visibility" class="sr-only">
+                      Tiene regla de visibilidad condicional.
+                    </span>
+                    <GitBranch
+                      v-if="findField(fieldId)!.visibility"
+                      class="size-3 text-orange-400"
                       aria-hidden="true"
                     />
                     <Badge
