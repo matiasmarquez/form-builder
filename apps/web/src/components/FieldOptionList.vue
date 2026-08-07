@@ -3,7 +3,6 @@ import { computed } from "vue";
 import type { FieldOption } from "@form-builder/shared";
 import { useEditorStore, isChoiceField } from "../stores/editor.ts";
 import { useReorderableList } from "../composables/useReorderableList.ts";
-import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 import Button from "./ui/Button.vue";
 
 const props = defineProps<{
@@ -83,8 +82,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
       <button
         type="button"
         :data-option-handle="optionId"
-        class="cursor-grab rounded px-1 text-muted-fg hover:text-fg"
-        :class="FOCUS_RING_CLASSES"
+        class="cursor-grab rounded px-1 text-muted-fg hover:text-fg focus-ring"
         :aria-label="`Reordenar opción ${
           optionIndex(optionId) + 1
         }. Usa flecha arriba y abajo para mover.`"
@@ -116,8 +114,7 @@ const canDeleteMore = computed(() => ids.value.length > 1);
       <input
         :id="optionLabelId(optionId)"
         :value="findOption(optionId)?.label ?? ''"
-        class="flex-1 rounded-md border-b border-transparent bg-transparent py-1 text-sm leading-relaxed text-fg placeholder:text-muted-fg focus:border-border"
-        :class="FOCUS_RING_CLASSES"
+        class="flex-1 rounded-md border-b border-transparent bg-transparent py-1 text-sm leading-relaxed text-fg placeholder:text-muted-fg focus:border-border focus-ring"
         :placeholder="`Opción ${index + 1}`"
         @input="
           store.setFieldOptionLabel(

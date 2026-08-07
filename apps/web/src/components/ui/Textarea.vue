@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue';
-import { cn } from '../../lib/cn.ts';
 import {
+  cn,
   textControlVariants,
   type TextControlVariants,
 } from './variants.ts';

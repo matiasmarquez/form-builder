@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Answer, Field, OptionId } from '@form-builder/shared';
-import { joinAriaDescribedBy } from '../lib/aria-describedby.ts';
-import { FOCUS_RING_CLASSES } from '../lib/focus-ring.ts';
 import { usePreviewStore } from '../stores/preview.ts';
+
+/** Build an `aria-describedby` value from optional element ids. */
+function joinAriaDescribedBy(
+  ...ids: Array<string | undefined | false | null>
+): string | undefined {
+  const present = ids.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  return present.length > 0 ? present.join(' ') : undefined;
+}
 
 const props = defineProps<{
   field: Field;
@@ -61,12 +67,12 @@ function onBlur(event?: FocusEvent): void {
 
 const inputClass = [
   'w-full rounded-md border border-border-strong bg-surface-elevated px-3 py-2 text-sm leading-relaxed text-fg',
-  FOCUS_RING_CLASSES,
+  'focus-ring',
 ].join(' ');
 
 const choiceInputClass = [
   'h-4 w-4 border-border-strong text-primary',
-  FOCUS_RING_CLASSES,
+  'focus-ring',
 ].join(' ');
 </script>
 

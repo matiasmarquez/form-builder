@@ -5,7 +5,6 @@ import { AlertCircle, Check, Circle, Loader2 } from "lucide-vue-next";
 import { useEditorStore } from "../stores/editor.ts";
 import { useAutosaveStore } from "../stores/autosave.ts";
 import Button from "./ui/Button.vue";
-import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 
 const props = defineProps<{
   onSave: () => void | Promise<void>;
@@ -201,8 +200,7 @@ const statusLabel = computed(() => {
         <input
           id="editor-autosave"
           type="checkbox"
-          class="rounded border-border-strong"
-          :class="FOCUS_RING_CLASSES"
+          class="rounded border-border-strong focus-ring"
           :checked="autosaveEnabled"
           @change="
             autosave.setEnabled(($event.target as HTMLInputElement).checked)

@@ -13,8 +13,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useEditorStore, isChoiceField } from "../stores/editor.ts";
 import { useReorderableList } from "../composables/useReorderableList.ts";
-import { fieldTypeIcon, fieldTypeLabel } from "../lib/field-type-meta.ts";
-import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
+import { fieldTypeIcon, fieldTypeLabel } from "../utils";
 import FieldOptionList from "./FieldOptionList.vue";
 import FieldVisibilityEditor from "./FieldVisibilityEditor.vue";
 import Badge from "./ui/Badge.vue";
@@ -183,8 +182,7 @@ function requiredInputId(fieldId: string): string {
                 <button
                   type="button"
                   :data-field-handle="fieldId"
-                  class="absolute left-2 top-1/2 inline-flex -translate-y-1/2 cursor-grab rounded text-muted-fg hover:text-fg md:static md:translate-y-0"
-                  :class="FOCUS_RING_CLASSES"
+                  class="absolute left-2 top-1/2 inline-flex -translate-y-1/2 cursor-grab rounded text-muted-fg hover:text-fg focus-ring md:static md:translate-y-0"
                   :aria-label="`Reordenar campo ${findField(fieldId)!.label || 'sin título'}. Usa flecha arriba y abajo para mover.`"
                   aria-keyshortcuts="ArrowUp ArrowDown"
                   @mousedown="onHandleMouseDown"
@@ -194,8 +192,7 @@ function requiredInputId(fieldId: string): string {
                 </button>
                 <button
                   type="button"
-                  class="flex min-w-0 flex-1 items-center cursor-pointer gap-2 rounded-md text-left"
-                  :class="FOCUS_RING_CLASSES"
+                  class="flex min-w-0 flex-1 items-center cursor-pointer gap-2 rounded-md text-left focus-ring"
                   :aria-expanded="false"
                   :aria-controls="bodyId(fieldId)"
                   @click="expand(fieldId)"
@@ -280,8 +277,7 @@ function requiredInputId(fieldId: string): string {
             <div class="overflow-hidden">
               <div class="space-y-3 p-4">
                 <div
-                  class="flex cursor-pointer items-center justify-between gap-3 rounded-md"
-                  :class="FOCUS_RING_CLASSES"
+                  class="flex cursor-pointer items-center justify-between gap-3 rounded-md focus-ring"
                   role="button"
                   tabindex="0"
                   :aria-expanded="true"
@@ -310,8 +306,7 @@ function requiredInputId(fieldId: string): string {
                       <input
                         :id="requiredInputId(fieldId)"
                         type="checkbox"
-                        class="rounded border-border-strong font-sm md:font-base"
-                        :class="FOCUS_RING_CLASSES"
+                        class="rounded border-border-strong font-sm focus-ring md:font-base"
                         :checked="findField(fieldId)!.required"
                         @change="
                           store.setFieldRequired(

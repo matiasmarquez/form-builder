@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AppBreadcrumb from "./AppBreadcrumb.vue";
 import ThemeToggle from "./ui/ThemeToggle.vue";
-import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 </script>
 
 <template>
@@ -15,8 +14,7 @@ import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
         <div class="min-w-0 justify-self-start">
           <RouterLink
             to="/"
-            class="block truncate rounded-md text-base font-semibold tracking-tight text-fg sm:text-lg"
-            :class="FOCUS_RING_CLASSES"
+            class="block truncate rounded-md text-base font-semibold tracking-tight text-fg focus-ring sm:text-lg"
           >
             Cobre Forms
           </RouterLink>

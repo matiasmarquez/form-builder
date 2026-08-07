@@ -9,7 +9,6 @@ import Alert from "../components/ui/Alert.vue";
 import Button from "../components/ui/Button.vue";
 import Card from "../components/ui/Card.vue";
 import { usePreviewStore } from "../stores/preview.ts";
-import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 
 const route = useRoute();
 const store = usePreviewStore();
@@ -120,8 +119,7 @@ watch(
         <div>
           <RouterLink
             to="/"
-            class="rounded-md text-sm leading-relaxed text-primary hover:underline"
-            :class="FOCUS_RING_CLASSES"
+            class="rounded-md text-sm leading-relaxed text-primary hover:underline focus-ring"
           >
             ← Volver a formularios
           </RouterLink>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
-import { FOCUS_RING_CLASSES } from '../../lib/focus-ring.ts';
 
 const props = defineProps<{
   open: boolean;
@@ -101,8 +100,7 @@ onBeforeUnmount(() => {
         <slot name="header" />
         <button
           type="button"
-          class="rounded-md px-2 py-1 text-sm text-muted-fg hover:text-fg"
-          :class="FOCUS_RING_CLASSES"
+          class="rounded-md px-2 py-1 text-sm text-muted-fg hover:text-fg focus-ring"
           aria-label="Cerrar panel"
           @click="close"
         >

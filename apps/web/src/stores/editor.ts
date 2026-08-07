@@ -1,4 +1,3 @@
-import { defineStore } from 'pinia';
 import {
   detectVisibilityCycle,
   type CheckboxField,
@@ -12,8 +11,9 @@ import {
   type SelectField,
   type TextField,
   type VisibilityRule,
-} from '@form-builder/shared';
-import { changedFieldIds } from '../lib/changed-field-ids.ts';
+} from "@form-builder/shared";
+import { defineStore } from "pinia";
+import { changedFieldIds } from "../utils";
 
 /**
  * Thrown by `save()` when the template's visibility rule graph contains a
@@ -23,9 +23,11 @@ import { changedFieldIds } from '../lib/changed-field-ids.ts';
 export class VisibilityCycleError extends Error {
   constructor(public readonly fieldIds: readonly FieldId[]) {
     super(
-      `No se puede guardar: las reglas de visibilidad condicional forman un ciclo (${fieldIds.join(' → ')}).`,
+      `No se puede guardar: las reglas de visibilidad condicional forman un ciclo (${fieldIds.join(
+        " → "
+      )}).`
     );
-    this.name = 'VisibilityCycleError';
+    this.name = "VisibilityCycleError";
   }
 }
 
@@ -41,7 +43,7 @@ export const COALESCE_MS = 500;
 // starting value chosen to feel responsive without spamming the API mid-word.
 export const AUTOSAVE_DEBOUNCE_MS = 800;
 
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
+export type SaveStatus = "idle" | "saving" | "saved" | "failed";
 
 // Injected save transport. The store doesn't import `fetch` directly so
 // tests can substitute a fake and so the wiring lives in `main.ts`.
@@ -52,15 +54,20 @@ export interface TemplateSaveTransport {
 
 let saveTransport: TemplateSaveTransport | null = null;
 
-export function setTemplateSaveTransport(transport: TemplateSaveTransport | null): void {
+export function setTemplateSaveTransport(
+  transport: TemplateSaveTransport | null
+): void {
   saveTransport = transport;
 }
 
-export function createEmptyTemplate(id: string, now: number = Date.now()): FormTemplate {
+export function createEmptyTemplate(
+  id: string,
+  now: number = Date.now()
+): FormTemplate {
   return {
     id,
-    title: 'Formulario sin título',
-    description: '',
+    title: "Formulario sin título",
+    description: "",
     fields: [],
     createdAt: now,
     updatedAt: now,
@@ -70,60 +77,67 @@ export function createEmptyTemplate(id: string, now: number = Date.now()): FormT
 export function createTextField(id: string): TextField {
   return {
     id,
-    type: 'text',
-    label: '',
-    description: '',
+    type: "text",
+    label: "",
+    description: "",
     required: false,
-    placeholder: '',
+    placeholder: "",
   };
 }
 
 export function createParagraphField(id: string): ParagraphField {
   return {
     id,
-    type: 'paragraph',
-    label: '',
-    description: '',
+    type: "paragraph",
+    label: "",
+    description: "",
     required: false,
-    placeholder: '',
+    placeholder: "",
   };
 }
 
-export function createCheckboxField(id: string, optionId: string): CheckboxField {
+export function createCheckboxField(
+  id: string,
+  optionId: string
+): CheckboxField {
   return {
     id,
-    type: 'checkbox',
-    label: '',
-    description: '',
+    type: "checkbox",
+    label: "",
+    description: "",
     required: false,
-    options: [{ id: optionId, label: '' }],
+    options: [{ id: optionId, label: "" }],
   };
 }
 
 export function createRadioField(id: string, optionId: string): RadioField {
   return {
     id,
-    type: 'radio',
-    label: '',
-    description: '',
+    type: "radio",
+    label: "",
+    description: "",
     required: false,
-    options: [{ id: optionId, label: '' }],
+    options: [{ id: optionId, label: "" }],
   };
 }
 
 export function createSelectField(id: string, optionId: string): SelectField {
   return {
     id,
-    type: 'select',
-    label: '',
-    description: '',
+    type: "select",
+    label: "",
+    description: "",
     required: false,
-    options: [{ id: optionId, label: '' }],
+    options: [{ id: optionId, label: "" }],
   };
 }
 
 export function isChoiceField(field: Field): field is ChoiceField {
-  return field.type === 'checkbox' || field.type === 'radio' || field.type === 'select';
+  return (
+    field.type === "checkbox" ||
+    field.type === "radio" ||
+    field.type === "select"
+  );
 }
 
 // One entry in the undo/redo stack — a full snapshot of the FormTemplate at
@@ -170,7 +184,7 @@ function cloneTemplate(template: FormTemplate): FormTemplate {
   return JSON.parse(JSON.stringify(template)) as FormTemplate;
 }
 
-export const useEditorStore = defineStore('editor', {
+export const useEditorStore = defineStore("editor", {
   state: (): EditorState => ({
     template: null,
     undoStack: [],
@@ -179,7 +193,7 @@ export const useEditorStore = defineStore('editor', {
     isPersisted: false,
     isDirty: false,
     revision: 0,
-    saveStatus: 'idle',
+    saveStatus: "idle",
     lastSavedAt: null,
     lastSaveError: null,
     historyFocusFieldIds: [],
@@ -203,7 +217,7 @@ export const useEditorStore = defineStore('editor', {
       this.isPersisted = false;
       this.isDirty = false;
       this.revision = 0;
-      this.saveStatus = 'idle';
+      this.saveStatus = "idle";
       this.lastSavedAt = null;
       this.lastSaveError = null;
       this.historyFocusFieldIds = [];
@@ -221,7 +235,7 @@ export const useEditorStore = defineStore('editor', {
       this.isPersisted = true;
       this.isDirty = false;
       this.revision = 0;
-      this.saveStatus = 'saved';
+      this.saveStatus = "saved";
       this.lastSavedAt = Date.now();
       this.lastSaveError = null;
       this.historyFocusFieldIds = [];
@@ -323,7 +337,7 @@ export const useEditorStore = defineStore('editor', {
     setTitle(title: string): void {
       if (!this.template) return;
       if (this.template.title === title) return;
-      this.beginStep('title');
+      this.beginStep("title");
       this.template.title = title;
       this.template.updatedAt = Date.now();
     },
@@ -331,52 +345,52 @@ export const useEditorStore = defineStore('editor', {
     setDescription(description: string): void {
       if (!this.template) return;
       if (this.template.description === description) return;
-      this.beginStep('description');
+      this.beginStep("description");
       this.template.description = description;
       this.template.updatedAt = Date.now();
     },
 
     addTextField(): FieldId | null {
-      return this.addField('text');
+      return this.addField("text");
     },
 
     addParagraphField(): FieldId | null {
-      return this.addField('paragraph');
+      return this.addField("paragraph");
     },
 
     addCheckboxField(): FieldId | null {
-      return this.addField('checkbox');
+      return this.addField("checkbox");
     },
 
     addRadioField(): FieldId | null {
-      return this.addField('radio');
+      return this.addField("radio");
     },
 
     addSelectField(): FieldId | null {
-      return this.addField('select');
+      return this.addField("select");
     },
 
     // Central add-field entry point. Each variant delegates here so the
     // history bookkeeping (beginStep, updatedAt) lives in exactly one place.
-    addField(type: Field['type']): FieldId | null {
+    addField(type: Field["type"]): FieldId | null {
       if (!this.template) return null;
       this.beginStep(null);
       const id = crypto.randomUUID();
       let field: Field;
       switch (type) {
-        case 'text':
+        case "text":
           field = createTextField(id);
           break;
-        case 'paragraph':
+        case "paragraph":
           field = createParagraphField(id);
           break;
-        case 'checkbox':
+        case "checkbox":
           field = createCheckboxField(id, crypto.randomUUID());
           break;
-        case 'radio':
+        case "radio":
           field = createRadioField(id, crypto.randomUUID());
           break;
-        case 'select':
+        case "select":
           field = createSelectField(id, crypto.randomUUID());
           break;
         default: {
@@ -396,7 +410,10 @@ export const useEditorStore = defineStore('editor', {
       if (!this.template) return;
       const from = this.template.fields.findIndex((f) => f.id === fieldId);
       if (from === -1) return;
-      const clamped = Math.max(0, Math.min(toIndex, this.template.fields.length - 1));
+      const clamped = Math.max(
+        0,
+        Math.min(toIndex, this.template.fields.length - 1)
+      );
       if (from === clamped) return;
       this.beginStep(null);
       const [moved] = this.template.fields.splice(from, 1);
@@ -478,7 +495,7 @@ export const useEditorStore = defineStore('editor', {
 
     setFieldDescription(fieldId: FieldId, description: string): void {
       const field = this.findField(fieldId);
-      if (!field || (field.description ?? '') === description) return;
+      if (!field || (field.description ?? "") === description) return;
       this.beginStep(`description:${fieldId}`);
       field.description = description;
       this.template!.updatedAt = Date.now();
@@ -515,8 +532,8 @@ export const useEditorStore = defineStore('editor', {
     setTextFieldPlaceholder(fieldId: FieldId, placeholder: string): void {
       const field = this.findField(fieldId);
       if (!field) return;
-      if (field.type !== 'text' && field.type !== 'paragraph') return;
-      if ((field.placeholder ?? '') === placeholder) return;
+      if (field.type !== "text" && field.type !== "paragraph") return;
+      if ((field.placeholder ?? "") === placeholder) return;
       this.beginStep(`placeholder:${fieldId}`);
       field.placeholder = placeholder;
       this.template!.updatedAt = Date.now();
@@ -528,13 +545,17 @@ export const useEditorStore = defineStore('editor', {
       const field = this.findField(fieldId);
       if (!field || !isChoiceField(field)) return null;
       this.beginStep(null);
-      const option: FieldOption = { id: crypto.randomUUID(), label: '' };
+      const option: FieldOption = { id: crypto.randomUUID(), label: "" };
       field.options.push(option);
       this.template!.updatedAt = Date.now();
       return option.id;
     },
 
-    setFieldOptionLabel(fieldId: FieldId, optionId: OptionId, label: string): void {
+    setFieldOptionLabel(
+      fieldId: FieldId,
+      optionId: OptionId,
+      label: string
+    ): void {
       const field = this.findField(fieldId);
       if (!field || !isChoiceField(field)) return;
       const option = field.options.find((o) => o.id === optionId);
@@ -557,7 +578,11 @@ export const useEditorStore = defineStore('editor', {
     // Move `optionId` to index `toIndex` in the field's option list. No-ops
     // if the option is already there — matches ticket 03's "reorder that ends
     // where it started does not push a step" rule for fields.
-    moveFieldOption(fieldId: FieldId, optionId: OptionId, toIndex: number): void {
+    moveFieldOption(
+      fieldId: FieldId,
+      optionId: OptionId,
+      toIndex: number
+    ): void {
       const field = this.findField(fieldId);
       if (!field || !isChoiceField(field)) return;
       const from = field.options.findIndex((o) => o.id === optionId);
@@ -583,7 +608,9 @@ export const useEditorStore = defineStore('editor', {
     async save(): Promise<void> {
       if (!this.template) return;
       if (!saveTransport) {
-        throw new Error('No save transport configured (call setTemplateSaveTransport in main.ts)');
+        throw new Error(
+          "No save transport configured (call setTemplateSaveTransport in main.ts)"
+        );
       }
       if (!this.isDirty && this.isPersisted) return;
 
@@ -593,7 +620,7 @@ export const useEditorStore = defineStore('editor', {
       const cycle = detectVisibilityCycle(this.template);
       if (cycle) {
         const err = new VisibilityCycleError(cycle.fieldIds);
-        this.saveStatus = 'failed';
+        this.saveStatus = "failed";
         this.lastSaveError = err.message;
         throw err;
       }
@@ -602,7 +629,7 @@ export const useEditorStore = defineStore('editor', {
       const snapshot = cloneTemplate(this.template);
       snapshot.updatedAt = Date.now();
 
-      this.saveStatus = 'saving';
+      this.saveStatus = "saving";
       this.lastSaveError = null;
       try {
         if (wasPersisted) {
@@ -618,10 +645,10 @@ export const useEditorStore = defineStore('editor', {
           this.isDirty = false;
         }
         this.isPersisted = true;
-        this.saveStatus = 'saved';
+        this.saveStatus = "saved";
         this.lastSavedAt = Date.now();
       } catch (err) {
-        this.saveStatus = 'failed';
+        this.saveStatus = "failed";
         this.lastSaveError = err instanceof Error ? err.message : String(err);
         throw err;
       }
@@ -631,7 +658,10 @@ export const useEditorStore = defineStore('editor', {
 
 // Shallow-serialised equality — the template is plain JSON, so JSON.stringify
 // is a sound structural comparison and cheap enough at editor scale.
-function templatesEqual(a: FormTemplate | null, b: FormTemplate | null): boolean {
+function templatesEqual(
+  a: FormTemplate | null,
+  b: FormTemplate | null
+): boolean {
   if (a === null || b === null) return a === b;
   // Ignore updatedAt when comparing — we bump it at save time so it will
   // always differ from what the user has in memory pre-next-mutation.

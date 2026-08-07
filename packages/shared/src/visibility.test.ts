@@ -8,7 +8,7 @@ import {
   type FormResponse,
   type FormTemplate,
   type VisibilityRule,
-} from '@form-builder/shared';
+} from './index';
 
 const REQUIRED_MSG = 'Este campo es obligatorio';
 

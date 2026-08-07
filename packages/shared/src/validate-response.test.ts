@@ -3,7 +3,7 @@ import {
   validateFormResponse,
   type FormResponse,
   type FormTemplate,
-} from '@form-builder/shared';
+} from './index';
 
 const REQUIRED_MSG = 'Este campo es obligatorio';
 

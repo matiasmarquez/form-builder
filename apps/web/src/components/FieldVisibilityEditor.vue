@@ -3,7 +3,6 @@ import { computed } from "vue";
 import type { Field, VisibilityRule } from "@form-builder/shared";
 import { Eye, EyeOff } from "lucide-vue-next";
 import { useEditorStore, isChoiceField } from "../stores/editor.ts";
-import { FOCUS_RING_CLASSES } from "../lib/focus-ring.ts";
 import Button from "./ui/Button.vue";
 
 const props = defineProps<{
@@ -94,7 +93,7 @@ const relationLabel = computed(() => {
 
 const selectClass = [
   "block w-full rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm text-fg",
-  FOCUS_RING_CLASSES,
+  "focus-ring",
 ].join(" ");
 </script>
 

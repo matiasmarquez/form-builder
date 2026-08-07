@@ -7,7 +7,7 @@ import {
   TEXT_FIELD_TYPES,
   fieldTypeIcon,
   fieldTypeLabel,
-} from "../lib/field-type-meta.ts";
+} from "../utils";
 import Button from "./ui/Button.vue";
 
 const store = useEditorStore();

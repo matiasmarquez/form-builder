@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import type { TemplateListItem } from "@form-builder/shared";
+import {
+  duplicateTemplate,
+  type TemplateListItem,
+} from "@form-builder/shared";
 import { Copy, Eye, Pencil, Plus, Trash2 } from "lucide-vue-next";
 import {
   createTemplate,
@@ -9,7 +12,6 @@ import {
   fetchTemplate,
   fetchTemplateList,
 } from "../api.ts";
-import { duplicateTemplate } from "../lib/duplicate.ts";
 import Alert from "../components/ui/Alert.vue";
 import Button from "../components/ui/Button.vue";
 import Card from "../components/ui/Card.vue";
@@ -90,7 +92,10 @@ async function duplicate(id: string): Promise<void> {
   duplicateErrorId.value = null;
   try {
     const source = await fetchTemplate(id);
-    const copy = duplicateTemplate(source);
+    const copy = {
+      ...duplicateTemplate(source),
+      title: `${source.title} (copia)`,
+    };
     await createTemplate(copy);
     templates.value = [
       ...templates.value,

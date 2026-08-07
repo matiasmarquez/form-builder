@@ -5,7 +5,6 @@ import { ChevronRight } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
 import { useEditorStore } from '../stores/editor.ts';
 import { usePreviewStore } from '../stores/preview.ts';
-import { FOCUS_RING_CLASSES } from '../lib/focus-ring.ts';
 
 const route = useRoute();
 const editor = useEditorStore();
@@ -52,8 +51,7 @@ const formEditTo = computed(() => `/forms/${formId.value}/edit`);
       <li class="hidden shrink-0 sm:block">
         <RouterLink
           to="/"
-          class="rounded-md text-muted-fg hover:text-fg"
-          :class="FOCUS_RING_CLASSES"
+          class="rounded-md text-muted-fg hover:text-fg focus-ring"
         >
           Formularios
         </RouterLink>
@@ -64,8 +62,7 @@ const formEditTo = computed(() => `/forms/${formId.value}/edit`);
       <li class="min-w-0">
         <RouterLink
           :to="formEditTo"
-          class="block truncate rounded-md text-muted-fg hover:text-fg"
-          :class="FOCUS_RING_CLASSES"
+          class="block truncate rounded-md text-muted-fg hover:text-fg focus-ring"
           :title="formTitle"
         >
           {{ formTitle }}

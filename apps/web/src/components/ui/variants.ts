@@ -1,11 +1,16 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { FOCUS_RING_CLASSES } from '../../lib/focus-ring.ts';
+
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
+}
 
 export const buttonVariants = cva(
   [
     'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors',
     'disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer disabled:pointer-events-none',
-    FOCUS_RING_CLASSES,
+    'focus-ring',
   ],
   {
     variants: {
@@ -45,7 +50,7 @@ export const textControlVariants = cva(
   [
     'w-full rounded-md px-3 py-2 text-sm leading-relaxed text-fg',
     'placeholder:text-muted-fg disabled:opacity-40',
-    FOCUS_RING_CLASSES,
+    'focus-ring',
   ],
   {
     variants: {

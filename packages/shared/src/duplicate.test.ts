@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { FormTemplate } from '@form-builder/shared';
-import { duplicateTemplate } from './duplicate.ts';
+import { duplicateTemplate, formTemplateSchema, type FormTemplate } from './index';
 
 function makeTemplate(): FormTemplate {
   return {
@@ -33,9 +32,9 @@ function makeTemplate(): FormTemplate {
 }
 
 describe('duplicateTemplate', () => {
-  it('suffixes the title with " (copia)"', () => {
+  it('preserves the source title', () => {
     const copy = duplicateTemplate(makeTemplate());
-    expect(copy.title).toBe('Original (copia)');
+    expect(copy.title).toBe('Original');
   });
 
   it('regenerates ids at every level', () => {
@@ -63,8 +62,7 @@ describe('duplicateTemplate', () => {
     expect(src).toEqual(snapshot);
   });
 
-  it('produces a template that round-trips through the schema', async () => {
-    const { formTemplateSchema } = await import('@form-builder/shared');
+  it('produces a template that round-trips through the schema', () => {
     const copy = duplicateTemplate(makeTemplate());
     expect(() => formTemplateSchema.parse(copy)).not.toThrow();
   });
