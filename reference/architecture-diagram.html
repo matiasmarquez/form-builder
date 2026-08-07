@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Form Builder — Arquitectura interactiva</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0c1118;
+      --bg-panel: #151c27;
+      --bg-elevated: #1a2332;
+      --ink: #e8eef4;
+      --ink-muted: #8b9cb0;
+      --ink-faint: #5c6e82;
+      --line: #2a3544;
+      --line-strong: #3d4f63;
+      --accent: #2dd4bf;
+      --accent-soft: rgba(45, 212, 191, 0.14);
+      --accent-mid: #5eead4;
+      --accent-ink: #042f2e;
+      --warn: #f59e0b;
+      --layer-ui: #2dd4bf;
+      --layer-state: #60a5fa;
+      --layer-svc: #a78bfa;
+      --layer-api: #fb923c;
+      --layer-db: #94a3b8;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 28px rgba(0, 0, 0, 0.35);
+      --radius: 12px;
+      --panel-w: 340px;
+      --font: "IBM Plex Sans", system-ui, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 8% -8%, rgba(45, 212, 191, 0.1), transparent),
+        radial-gradient(ellipse 55% 40% at 100% 0%, rgba(96, 165, 250, 0.07), transparent),
+        linear-gradient(180deg, #101820 0%, var(--bg) 45%);
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+      min-height: 100dvh;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1.25rem 1.75rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(21, 28, 39, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      font-size: 0.875rem;
+      color: var(--ink-muted);
+      max-width: 42rem;
+      line-height: 1.45;
+    }
+
+    .stack-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: flex-end;
+    }
+
+    .stack-pills span {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.28rem 0.55rem;
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Main layout ── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr var(--panel-w);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── Diagram pane ── */
+    .diagram-pane {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(21, 28, 39, 0.65);
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .canvas-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      position: relative;
+      cursor: grab;
+    }
+
+    .canvas-wrap.dragging { cursor: grabbing; }
+
+    .canvas-inner {
+      position: relative;
+      width: 1100px;
+      height: 720px;
+      margin: 0 auto;
+      transform-origin: 0 0;
+    }
+
+    svg.graph {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    svg.graph .edge {
+      fill: none;
+      stroke: var(--line-strong);
+      stroke-width: 1.5;
+      opacity: 0.55;
+      transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s;
+    }
+
+    svg.graph .edge.dimmed {
+      opacity: 0.12;
+      stroke: var(--line);
+    }
+
+    svg.graph .edge.highlighted {
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      opacity: 1;
+      filter: drop-shadow(0 0 4px rgba(45, 212, 191, 0.45));
+    }
+
+    svg.graph .edge-arrow {
+      fill: var(--line-strong);
+      opacity: 0.55;
+      transition: fill 0.25s, opacity 0.25s;
+    }
+
+    svg.graph .edge.dimmed + .edge-arrow,
+    svg.graph .edge-arrow.dimmed {
+      opacity: 0.1;
+    }
+
+    svg.graph .edge-arrow.highlighted {
+      fill: var(--accent);
+      opacity: 1;
+    }
+
+    svg.graph .edge-num {
+      pointer-events: none;
+    }
+
+    svg.graph .edge-num-bg {
+      fill: var(--accent);
+      stroke: var(--bg);
+      stroke-width: 2;
+    }
+
+    svg.graph .edge-num-text {
+      fill: var(--accent-ink);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .nodes {
+      position: absolute;
+      inset: 0;
+    }
+
+    .node {
+      position: absolute;
+      width: 148px;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      background: var(--bg-panel);
+      border: 1.5px solid var(--line);
+      box-shadow: var(--shadow);
+      cursor: default;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s,
+        opacity 0.25s,
+        transform 0.2s;
+      user-select: none;
+    }
+
+    .node:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 28px rgba(0, 0, 0, 0.35);
+      border-color: var(--line-strong);
+      z-index: 5;
+    }
+
+    .node.dimmed {
+      opacity: 0.22;
+      box-shadow: none;
+    }
+
+    .node.highlighted {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow);
+      opacity: 1;
+      z-index: 4;
+    }
+
+    .node.focused {
+      border-color: var(--accent-mid);
+      box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow);
+      z-index: 6;
+    }
+
+    .node-layer {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.15rem;
+    }
+
+    .node[data-layer="ui"] .node-layer { color: var(--layer-ui); }
+    .node[data-layer="state"] .node-layer { color: var(--layer-state); }
+    .node[data-layer="svc"] .node-layer { color: var(--layer-svc); }
+    .node[data-layer="api"] .node-layer { color: var(--layer-api); }
+    .node[data-layer="db"] .node-layer { color: var(--layer-db); }
+
+    .node[data-layer="ui"] { border-top: 3px solid var(--layer-ui); }
+    .node[data-layer="state"] { border-top: 3px solid var(--layer-state); }
+    .node[data-layer="svc"] { border-top: 3px solid var(--layer-svc); }
+    .node[data-layer="api"] { border-top: 3px solid var(--layer-api); }
+    .node[data-layer="db"] { border-top: 3px solid var(--layer-db); }
+
+    .node-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+    }
+
+    .node-file {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--ink-faint);
+      margin-top: 0.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .layer-band {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      border-radius: 10px;
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    .layer-band-label {
+      position: absolute;
+      left: 20px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+      pointer-events: none;
+    }
+
+    .zoom-controls {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.35rem;
+      z-index: 10;
+    }
+
+    .zoom-controls button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--bg-panel);
+      color: var(--ink);
+      font-size: 1.1rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: background 0.15s;
+    }
+
+    .zoom-controls button:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      font-size: 0.7rem;
+      color: var(--ink-faint);
+      background: rgba(21, 28, 39, 0.9);
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      z-index: 10;
+    }
+
+    /* ── Tooltip ── */
+    .tooltip {
+      position: fixed;
+      z-index: 100;
+      max-width: 280px;
+      padding: 0.7rem 0.85rem;
+      background: #f1f5f9;
+      color: #1e293b;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.15s, transform 0.15s;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tooltip strong {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+      color: #0f172a;
+    }
+
+    .tooltip .tip-file {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: #64748b;
+      margin-bottom: 0.35rem;
+    }
+
+    /* ── Side panel ── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--line);
+      background: var(--bg-panel);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 1rem 1.15rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .panel-head p {
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+
+    .flow-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      list-style: none;
+    }
+
+    .flow-item {
+      width: 100%;
+      text-align: left;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      color: inherit;
+      transition: background 0.15s, border-color 0.15s;
+      margin-bottom: 0.25rem;
+    }
+
+    .flow-item:hover {
+      background: var(--bg);
+      border-color: var(--line);
+    }
+
+    .flow-item.active {
+      background: var(--accent-soft);
+      border-color: rgba(45, 212, 191, 0.4);
+    }
+
+    .flow-item .flow-num {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+    }
+
+    .flow-item.active .flow-num { color: var(--accent-mid); }
+
+    .flow-item .flow-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .flow-item .flow-brief {
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      margin-top: 0.2rem;
+      line-height: 1.35;
+    }
+
+    .flow-detail {
+      border-top: 1px solid var(--line);
+      padding: 1rem 1.15rem;
+      max-height: 42%;
+      overflow-y: auto;
+      background: var(--bg-elevated);
+    }
+
+    .flow-detail.empty {
+      color: var(--ink-faint);
+      font-size: 0.78rem;
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+
+    .flow-detail h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .flow-detail .steps {
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .flow-detail .steps li {
+      position: relative;
+      padding: 0.4rem 0 0.4rem 1.6rem;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      color: var(--ink-muted);
+      border-left: 2px solid var(--line);
+      margin-left: 0.4rem;
+    }
+
+    .flow-detail .steps li:last-child { border-left-color: transparent; }
+
+    .flow-detail .steps li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: -0.55rem;
+      top: 0.45rem;
+      width: 1.1rem;
+      height: 1.1rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flow-detail .path-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .flow-detail .path-chips span {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      background: var(--accent-soft);
+      color: var(--accent-mid);
+      border: 1px solid rgba(45, 212, 191, 0.25);
+    }
+
+    .clear-btn {
+      display: block;
+      width: calc(100% - 1rem);
+      margin: 0.25rem 0.5rem 0.75rem;
+      padding: 0.5rem;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .clear-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .main {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(420px, 55vh) 1fr;
+      }
+
+      .panel {
+        border-left: none;
+        border-top: 1px solid var(--line);
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .stack-pills { justify-content: flex-start; }
+
+      .hint { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 1rem; }
+      .brand h1 { font-size: 1.15rem; }
+      .canvas-inner { width: 980px; height: 680px; }
+      :root { --panel-w: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Form Builder — Arquitectura</h1>
+        <p>
+          Vue 3 + Pinia editor, preview client-only, Hono + SQLite.
+          Seleccioná un flujo a la derecha para resaltar la ruta completa.
+        </p>
+      </div>
+      <div class="stack-pills" aria-label="Tech stack">
+        <span>Vue 3</span>
+        <span>Pinia</span>
+        <span>Vite</span>
+        <span>Hono</span>
+        <span>SQLite</span>
+        <span>Zod</span>
+        <span>pnpm workspaces</span>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="diagram-pane" aria-label="Diagrama de arquitectura">
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--layer-ui)"></span> UI</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--layer-state)"></span> State</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--layer-svc)"></span> Services</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--layer-api)"></span> API</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--layer-db)"></span> Persistence</div>
+        </div>
+
+        <div class="canvas-wrap" id="canvasWrap">
+          <div class="canvas-inner" id="canvasInner">
+            <!-- Layer bands -->
+            <div class="layer-band" style="top:28px;height:168px;background:rgba(45,212,191,0.05)"></div>
+            <div class="layer-band-label" style="top:34px">UI · views &amp; components</div>
+
+            <div class="layer-band" style="top:210px;height:118px;background:rgba(96,165,250,0.05)"></div>
+            <div class="layer-band-label" style="top:216px">State · Pinia</div>
+
+            <div class="layer-band" style="top:342px;height:118px;background:rgba(167,139,250,0.05)"></div>
+            <div class="layer-band-label" style="top:348px">Services · composables &amp; shared</div>
+
+            <div class="layer-band" style="top:474px;height:100px;background:rgba(251,146,60,0.05)"></div>
+            <div class="layer-band-label" style="top:480px">API · Hono</div>
+
+            <div class="layer-band" style="top:588px;height:100px;background:rgba(148,163,184,0.05)"></div>
+            <div class="layer-band-label" style="top:594px">Persistence</div>
+
+            <svg class="graph" id="edgesSvg" aria-hidden="true"></svg>
+            <div class="nodes" id="nodesRoot"></div>
+          </div>
+        </div>
+
+        <div class="zoom-controls">
+          <button type="button" id="zoomOut" title="Alejar" aria-label="Alejar">−</button>
+          <button type="button" id="zoomReset" title="Reset" aria-label="Restablecer zoom">⟲</button>
+          <button type="button" id="zoomIn" title="Acercar" aria-label="Acercar">+</button>
+        </div>
+        <div class="hint">Hover · tooltip · click nodo · pan con drag</div>
+      </section>
+
+      <aside class="panel" aria-label="Flujos del sistema">
+        <div class="panel-head">
+          <h2>Flujos</h2>
+          <p>Cada flujo resalta nodos y aristas en el diagrama.</p>
+        </div>
+        <ul class="flow-list" id="flowList"></ul>
+        <button type="button" class="clear-btn" id="clearFlow">Limpiar selección</button>
+        <div class="flow-detail empty" id="flowDetail">
+          Seleccioná un flujo para ver los pasos y la ruta.
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // Architecture graph — Form Builder monorepo
+    // ═══════════════════════════════════════════════════════════
+
+    const LAYER_LABELS = {
+      ui: "UI",
+      state: "State",
+      svc: "Services",
+      api: "API",
+      db: "Persistence",
+    };
+
+    const NODE_W = 148;
+    const NODE_H = 58;
+
+    /** @type {{ id: string, label: string, layer: string, file: string, tip: string, x: number, y: number }[]} */
+    const nodes = [
+      // UI row
+      { id: "ui-home", label: "HomeView", layer: "ui", file: "views/HomeView.vue", tip: "Lista templates, crea, duplica y elimina. Punto de entrada del editor.", x: 40, y: 58 },
+      { id: "ui-editor", label: "EditorView", layer: "ui", file: "views/EditorView.vue", tip: "Ruta /forms/:id/edit. Seed desde API, autosave, atajos Cmd+S/Z.", x: 220, y: 58 },
+      { id: "ui-preview", label: "PreviewView", layer: "ui", file: "views/PreviewView.vue", tip: "Relleno del formulario. Submit client-only (sin persistir respuestas).", x: 400, y: 58 },
+      { id: "ui-palette", label: "FieldPalette", layer: "ui", file: "components/FieldPalette.vue", tip: "Agrega campos: text, paragraph, checkbox, radio, select.", x: 580, y: 58 },
+      { id: "ui-field-list", label: "FieldList", layer: "ui", file: "components/FieldList.vue", tip: "Edita, expande, borra y reordena campos del template.", x: 760, y: 58 },
+      { id: "ui-visibility", label: "VisibilityEditor", layer: "ui", file: "components/FieldVisibilityEditor.vue", tip: "Adjunta VisibilityRule a un campo (condiciones de visibilidad).", x: 940, y: 58 },
+      { id: "ui-header", label: "EditorHeader", layer: "ui", file: "components/EditorHeader.vue", tip: "Estado de guardado, toggle autosave y botón Guardar.", x: 220, y: 140 },
+      { id: "ui-preview-field", label: "PreviewField", layer: "ui", file: "components/PreviewField.vue", tip: "Control de respuesta por campo; blur dispara validación.", x: 400, y: 140 },
+
+      // State
+      { id: "store-editor", label: "useEditorStore", layer: "state", file: "stores/editor.ts", tip: "Template en memoria, HistoryStep undo/redo, isDirty/isPersisted, save().", x: 220, y: 248 },
+      { id: "store-preview", label: "usePreviewStore", layer: "state", file: "stores/preview.ts", tip: "Answers, computeVisibleFieldIds, validateFormResponse, submit client-only.", x: 480, y: 248 },
+      { id: "store-autosave", label: "useAutosaveStore", layer: "state", file: "stores/autosave.ts", tip: "Flag global autosave on/off persistido en localStorage.", x: 740, y: 248 },
+
+      // Services
+      { id: "cmp-autosave", label: "useAutosave", layer: "svc", file: "composables/useAutosave.ts", tip: "Debounce 800ms sobre editor.revision → editor.save().", x: 100, y: 380 },
+      { id: "cmp-reorder", label: "useReorderableList", layer: "svc", file: "composables/useReorderableList.ts", tip: "FormKit DnD + teclado; commit(newOrder) al store.", x: 300, y: 380 },
+      { id: "svc-api", label: "api.ts", layer: "svc", file: "web/src/api.ts", tip: "fetch wrappers: list/get/create/update/delete templates vía /api.", x: 500, y: 380 },
+      { id: "pkg-shared", label: "@form-builder/shared", layer: "svc", file: "packages/shared", tip: "Zod schemas, visibility, validateFormResponse, duplicateTemplate.", x: 720, y: 380 },
+      { id: "boot-main", label: "main.ts", layer: "svc", file: "web/src/main.ts", tip: "Monta Vue + Pinia + router. Inyecta TemplateSaveTransport.", x: 920, y: 380 },
+
+      // API
+      { id: "api-hono", label: "Hono app", layer: "api", file: "api/src/index.ts", tip: "REST /templates. CORS, Zod parse, detectVisibilityCycle.", x: 400, y: 512 },
+      { id: "api-repo", label: "TemplatesRepository", layer: "api", file: "templates-repository.ts", tip: "CRUD: list, get, create, replace, delete sobre SQLite.", x: 640, y: 512 },
+
+      // Persistence
+      { id: "db-sqlite", label: "SQLite", layer: "db", file: "form_templates table", tip: "Hybrid schema: columnas + body JSON (Field[]). WAL mode.", x: 520, y: 626 },
+      { id: "ls-autosave", label: "localStorage", layer: "db", file: "form-builder.autosave-enabled", tip: "Preferencia de autosave del usuario (no templates).", x: 760, y: 626 },
+    ];
+
+    /** @type {[string, string][]} */
+    const edges = [
+      ["boot-main", "store-editor"],
+      ["boot-main", "svc-api"],
+      ["ui-home", "svc-api"],
+      ["ui-home", "pkg-shared"],
+      ["ui-home", "ui-editor"],
+      ["ui-editor", "store-editor"],
+      ["ui-editor", "svc-api"],
+      ["ui-editor", "cmp-autosave"],
+      ["ui-editor", "ui-header"],
+      ["ui-editor", "ui-palette"],
+      ["ui-editor", "ui-field-list"],
+      ["ui-palette", "store-editor"],
+      ["ui-field-list", "store-editor"],
+      ["ui-field-list", "cmp-reorder"],
+      ["ui-field-list", "ui-visibility"],
+      ["ui-visibility", "store-editor"],
+      ["ui-header", "store-editor"],
+      ["ui-header", "store-autosave"],
+      ["cmp-autosave", "store-editor"],
+      ["cmp-autosave", "store-autosave"],
+      ["cmp-reorder", "store-editor"],
+      ["store-editor", "svc-api"],
+      ["store-editor", "pkg-shared"],
+      ["ui-preview", "svc-api"],
+      ["ui-preview", "store-preview"],
+      ["ui-preview", "ui-preview-field"],
+      ["ui-preview-field", "store-preview"],
+      ["store-preview", "pkg-shared"],
+      ["svc-api", "api-hono"],
+      ["api-hono", "pkg-shared"],
+      ["api-hono", "api-repo"],
+      ["api-repo", "db-sqlite"],
+      ["store-autosave", "ls-autosave"],
+    ];
+
+    /** @type {{ id: string, title: string, brief: string, steps: string[], path: string[] }[]} */
+    const flows = [
+      {
+        id: "f1",
+        title: "Crear formulario nuevo",
+        brief: "Home → editor vacío → primer POST",
+        steps: [
+          "HomeView.newForm() genera UUID y navega a /forms/:id/edit",
+          "EditorView.seedFromRoute() → fetchTemplate → 404 TemplateNotFoundError",
+          "useEditorStore.initializeTemplate(id) — template vacío, isPersisted=false",
+          "Primera mutación + save (autosave o Guardar) → createTemplate",
+          "POST /templates → TemplatesRepository.create → SQLite INSERT",
+        ],
+        path: ["ui-home", "ui-editor", "store-editor", "cmp-autosave", "svc-api", "api-hono", "api-repo", "db-sqlite"],
+      },
+      {
+        id: "f2",
+        title: "Cargar formulario en editor",
+        brief: "GET template → loadTemplate",
+        steps: [
+          "Navegación a /forms/:id/edit (desde Home o URL)",
+          "EditorView.seedFromRoute() → fetchTemplate → GET /templates/:id",
+          "API: templates.get → rowToTemplate",
+          "Cliente: formTemplateSchema.parse → editor.loadTemplate",
+          "isPersisted=true, historial limpio",
+        ],
+        path: ["ui-home", "ui-editor", "svc-api", "api-hono", "api-repo", "db-sqlite", "store-editor", "pkg-shared"],
+      },
+      {
+        id: "f3",
+        title: "Listar templates (Home)",
+        brief: "GET /templates → lista",
+        steps: [
+          "HomeView.onMounted → loadTemplates()",
+          "fetchTemplateList → GET /templates",
+          "templates.list() → {id, title, updatedAt}[]",
+          "templateListSchema.parse en el cliente",
+        ],
+        path: ["ui-home", "svc-api", "api-hono", "api-repo", "db-sqlite", "pkg-shared"],
+      },
+      {
+        id: "f4",
+        title: "Editar campo",
+        brief: "Mutación → HistoryStep → dirty",
+        steps: [
+          "FieldList / inputs → setFieldLabel / setFieldRequired / …",
+          "beginStep(coalesceKey|null) → push HistoryStep (o coalesce)",
+          "isDirty=true, revision++",
+          "Template mutado en memoria (aún no HTTP)",
+        ],
+        path: ["ui-field-list", "ui-palette", "store-editor", "ui-header"],
+      },
+      {
+        id: "f5",
+        title: "Autosave",
+        brief: "revision → debounce 800ms → save",
+        steps: [
+          "Mutación incrementa editor.revision",
+          "useAutosave (si enabled) agenda AUTOSAVE_DEBOUNCE_MS",
+          "runSave() → editor.save() + detectVisibilityCycle",
+          "Transport: createTemplate o updateTemplate (POST/PUT)",
+          "Hono → repository → SQLite; EditorHeader muestra status",
+        ],
+        path: ["store-editor", "cmp-autosave", "store-autosave", "ls-autosave", "pkg-shared", "svc-api", "api-hono", "api-repo", "db-sqlite", "ui-header"],
+      },
+      {
+        id: "f6",
+        title: "Undo / Redo",
+        brief: "Snapshots en el store (sin API)",
+        steps: [
+          "EditorToolbar o Cmd/Ctrl+Z / Shift+Z",
+          "flushCoalesce() luego undo() / redo()",
+          "Swap de snapshots en undoStack / redoStack",
+          "changedFieldIds → expand/focus en FieldList",
+          "isDirty=true, revision++ (puede disparar autosave)",
+        ],
+        path: ["ui-editor", "store-editor", "ui-field-list", "cmp-autosave"],
+      },
+      {
+        id: "f7",
+        title: "Drag & drop reorder",
+        brief: "FormKit DnD → reorderFields",
+        steps: [
+          "FieldList → useReorderableList({ commit: reorderFields })",
+          "onDragend o moveByKeyboard → reorderFields(newOrder)",
+          "beginStep(null) si el orden cambió → un HistoryStep",
+          "Opciones: FieldOptionList → reorderFieldOptions",
+        ],
+        path: ["ui-field-list", "cmp-reorder", "store-editor"],
+      },
+      {
+        id: "f8",
+        title: "Visibilidad condicional",
+        brief: "Design-time + runtime preview",
+        steps: [
+          "Design: FieldVisibilityEditor → setFieldVisibility / clear",
+          "Ciclos rechazados en editor.save() y en la API",
+          "Runtime: PreviewField.setAnswer → reconcileHiddenAnswers",
+          "computeVisibleFieldIds; PreviewView renderiza visibleFields",
+        ],
+        path: ["ui-visibility", "store-editor", "pkg-shared", "ui-preview-field", "store-preview", "ui-preview", "svc-api", "api-hono"],
+      },
+      {
+        id: "f9",
+        title: "Submit respuesta (preview)",
+        brief: "Validación local — sin HTTP",
+        steps: [
+          "PreviewView.onSubmit → preview.submit()",
+          "validateFormResponse(template, response, visibleFieldIds)",
+          "Fail → fieldErrors + focusFirstInvalid",
+          "Success → isSubmitted=true (no se persiste)",
+        ],
+        path: ["ui-preview", "ui-preview-field", "store-preview", "pkg-shared"],
+      },
+      {
+        id: "f10",
+        title: "Duplicar formulario",
+        brief: "duplicateTemplate → POST",
+        steps: [
+          "HomeView.duplicate(id) → fetchTemplate",
+          "duplicateTemplate(source) — nuevos UUIDs, drop visibility",
+          "createTemplate(copy) → POST /templates → INSERT",
+          "Se agrega el ítem a la lista local",
+        ],
+        path: ["ui-home", "svc-api", "pkg-shared", "api-hono", "api-repo", "db-sqlite"],
+      },
+      {
+        id: "f11",
+        title: "Eliminar formulario",
+        brief: "DELETE /templates/:id",
+        steps: [
+          "HomeView.confirmDelete → deleteTemplate",
+          "DELETE /templates/:id → templates.delete",
+          "Filtro de lista local (404 = éxito)",
+        ],
+        path: ["ui-home", "svc-api", "api-hono", "api-repo", "db-sqlite"],
+      },
+      {
+        id: "f12",
+        title: "Cargar preview",
+        brief: "GET → loadTemplate + answers vacíos",
+        steps: [
+          "PreviewView.seedFromRoute → fetchTemplate",
+          "preview.loadTemplate → answers vacíos",
+          "reconcileHiddenAnswers con visibility rules",
+        ],
+        path: ["ui-preview", "svc-api", "api-hono", "api-repo", "db-sqlite", "store-preview", "pkg-shared"],
+      },
+    ];
+
+    // ── Helpers ──
+    const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+    const edgeKey = (a, b) => `${a}→${b}`;
+
+    function centerOf(n) {
+      return { x: n.x + NODE_W / 2, y: n.y + NODE_H / 2 };
+    }
+
+    function edgePath(a, b) {
+      const A = centerOf(nodeMap[a]);
+      const B = centerOf(nodeMap[b]);
+      const dx = B.x - A.x;
+      const dy = B.y - A.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const sx = A.x + (dx / len) * (NODE_W * 0.15);
+      const sy = A.y + (dy / len) * 12;
+      const ex = B.x - (dx / len) * (NODE_W * 0.15);
+      const ey = B.y - (dy / len) * 12;
+      const mx = (sx + ex) / 2;
+      const my = (sy + ey) / 2;
+      const cx = mx + (sy - ey) * 0.08;
+      const cy = my + (ex - sx) * 0.08;
+      // Midpoint of quadratic Bezier at t=0.5: (P0+2P1+P2)/4
+      const midX = 0.25 * sx + 0.5 * cx + 0.25 * ex;
+      const midY = 0.25 * sy + 0.5 * cy + 0.25 * ey;
+      return {
+        d: `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`,
+        ex, ey, sx, sy, midX, midY,
+        angle: Math.atan2(ey - cy, ex - cx),
+      };
+    }
+
+    // ── Render nodes ──
+    const nodesRoot = document.getElementById("nodesRoot");
+    nodes.forEach((n) => {
+      const el = document.createElement("div");
+      el.className = "node";
+      el.dataset.id = n.id;
+      el.dataset.layer = n.layer;
+      el.style.left = n.x + "px";
+      el.style.top = n.y + "px";
+      el.innerHTML = `
+        <div class="node-layer">${LAYER_LABELS[n.layer]}</div>
+        <div class="node-label">${n.label}</div>
+        <div class="node-file">${n.file}</div>
+      `;
+      el.addEventListener("mouseenter", (e) => showTooltip(n, e));
+      el.addEventListener("mousemove", (e) => moveTooltip(e));
+      el.addEventListener("mouseleave", hideTooltip);
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        focusNode(n.id);
+      });
+      nodesRoot.appendChild(el);
+    });
+
+    // ── Render edges ──
+    const svg = document.getElementById("edgesSvg");
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    svg.appendChild(defs);
+
+    const edgeEls = {};
+    const arrowEls = {};
+    const edgeMeta = {};
+
+    edges.forEach(([a, b]) => {
+      const geom = edgePath(a, b);
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", geom.d);
+      path.setAttribute("class", "edge");
+      path.dataset.from = a;
+      path.dataset.to = b;
+      svg.appendChild(path);
+
+      const size = 6;
+      const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      const p1 = `${geom.ex},${geom.ey}`;
+      const p2 = `${geom.ex - size * Math.cos(geom.angle - 0.4)},${geom.ey - size * Math.sin(geom.angle - 0.4)}`;
+      const p3 = `${geom.ex - size * Math.cos(geom.angle + 0.4)},${geom.ey - size * Math.sin(geom.angle + 0.4)}`;
+      arrow.setAttribute("points", `${p1} ${p2} ${p3}`);
+      arrow.setAttribute("class", "edge-arrow");
+      arrow.dataset.from = a;
+      arrow.dataset.to = b;
+      svg.appendChild(arrow);
+
+      const key = edgeKey(a, b);
+      edgeEls[key] = path;
+      arrowEls[key] = arrow;
+      edgeMeta[key] = geom;
+    });
+
+    const edgeNumsLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    edgeNumsLayer.id = "edgeNums";
+    svg.appendChild(edgeNumsLayer);
+
+    // ── Flows panel ──
+    const flowList = document.getElementById("flowList");
+    const flowDetail = document.getElementById("flowDetail");
+    let activeFlowId = null;
+    let focusedNodeId = null;
+
+    flows.forEach((f, i) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "flow-item";
+      btn.dataset.flow = f.id;
+      btn.innerHTML = `
+        <div class="flow-num">F${String(i + 1).padStart(2, "0")}</div>
+        <div class="flow-title">${f.title}</div>
+        <div class="flow-brief">${f.brief}</div>
+      `;
+      btn.addEventListener("click", () => selectFlow(f.id));
+      li.appendChild(btn);
+      flowList.appendChild(li);
+    });
+
+    document.getElementById("clearFlow").addEventListener("click", () => {
+      activeFlowId = null;
+      focusedNodeId = null;
+      updateHighlight();
+      renderFlowDetail(null);
+      document.querySelectorAll(".flow-item").forEach((el) => el.classList.remove("active"));
+    });
+
+    function selectFlow(id) {
+      activeFlowId = id;
+      focusedNodeId = null;
+      document.querySelectorAll(".flow-item").forEach((el) => {
+        el.classList.toggle("active", el.dataset.flow === id);
+      });
+      const flow = flows.find((f) => f.id === id);
+      updateHighlight();
+      renderFlowDetail(flow);
+    }
+
+    function focusNode(id) {
+      focusedNodeId = id;
+      // If a flow is active, keep it; else highlight neighbors
+      updateHighlight();
+      const n = nodeMap[id];
+      const tip = document.getElementById("tooltip");
+      // Show detail in panel briefly as node card
+      if (!activeFlowId) {
+        flowDetail.classList.remove("empty");
+        flowDetail.innerHTML = `
+          <h3>${n.label}</h3>
+          <div class="tip-file" style="font-family:var(--mono);font-size:0.68rem;color:var(--ink-faint);margin-bottom:0.5rem">${n.file}</div>
+          <p style="font-size:0.78rem;color:var(--ink-muted);line-height:1.45">${n.tip}</p>
+          <div class="path-chips" style="margin-top:0.75rem">
+            <span>${LAYER_LABELS[n.layer]}</span>
+          </div>
+        `;
+      }
+    }
+
+    function findEdgeKey(a, b) {
+      if (edgeEls[edgeKey(a, b)]) return edgeKey(a, b);
+      if (edgeEls[edgeKey(b, a)]) return edgeKey(b, a);
+      return null;
+    }
+
+    /** Ordered edges along the flow path (for numbered badges). */
+    function pathEdgeSequence(path) {
+      const seq = [];
+      const used = new Set();
+
+      for (let i = 1; i < path.length; i++) {
+        const to = path[i];
+        let key = findEdgeKey(path[i - 1], to);
+        if (!key) {
+          for (let j = i - 2; j >= 0; j--) {
+            key = findEdgeKey(path[j], to);
+            if (key) break;
+          }
+        }
+        if (key && !used.has(key)) {
+          used.add(key);
+          seq.push(key);
+        }
+      }
+
+      // Remaining edges among path members (side links), appended after the main walk
+      const pathSet = new Set(path);
+      const index = Object.fromEntries(path.map((id, i) => [id, i]));
+      const extras = [];
+      edges.forEach(([a, b]) => {
+        if (!pathSet.has(a) || !pathSet.has(b)) return;
+        const key = edgeKey(a, b);
+        if (used.has(key)) return;
+        extras.push({
+          key,
+          order: Math.min(index[a], index[b]) * 100 + Math.max(index[a], index[b]),
+        });
+      });
+      extras.sort((x, y) => x.order - y.order);
+      extras.forEach(({ key }) => {
+        used.add(key);
+        seq.push(key);
+      });
+
+      return seq;
+    }
+
+    function clearEdgeNumbers() {
+      while (edgeNumsLayer.firstChild) edgeNumsLayer.removeChild(edgeNumsLayer.firstChild);
+    }
+
+    function renderEdgeNumbers(seq) {
+      clearEdgeNumbers();
+      seq.forEach((key, i) => {
+        const meta = edgeMeta[key];
+        if (!meta) return;
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "edge-num");
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("class", "edge-num-bg");
+        circle.setAttribute("cx", meta.midX);
+        circle.setAttribute("cy", meta.midY);
+        circle.setAttribute("r", 9);
+        g.appendChild(circle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("class", "edge-num-text");
+        text.setAttribute("x", meta.midX);
+        text.setAttribute("y", meta.midY);
+        text.textContent = String(i + 1);
+        g.appendChild(text);
+
+        edgeNumsLayer.appendChild(g);
+      });
+    }
+
+    function updateHighlight() {
+      const nodeEls = document.querySelectorAll(".node");
+      const flow = activeFlowId ? flows.find((f) => f.id === activeFlowId) : null;
+      const pathSet = flow ? new Set(flow.path) : null;
+      const edgeSeq = flow ? pathEdgeSequence(flow.path) : [];
+      const hiEdges = new Set(edgeSeq);
+
+      let neighborSet = null;
+      if (!flow && focusedNodeId) {
+        neighborSet = new Set([focusedNodeId]);
+        edges.forEach(([a, b]) => {
+          if (a === focusedNodeId || b === focusedNodeId) {
+            neighborSet.add(a);
+            neighborSet.add(b);
+          }
+        });
+      }
+
+      nodeEls.forEach((el) => {
+        const id = el.dataset.id;
+        el.classList.remove("highlighted", "dimmed", "focused");
+        if (flow) {
+          if (pathSet.has(id)) el.classList.add("highlighted");
+          else el.classList.add("dimmed");
+        } else if (neighborSet) {
+          if (id === focusedNodeId) el.classList.add("focused");
+          else if (neighborSet.has(id)) el.classList.add("highlighted");
+          else el.classList.add("dimmed");
+        }
+      });
+
+      Object.keys(edgeEls).forEach((key) => {
+        const path = edgeEls[key];
+        const arrow = arrowEls[key];
+        path.classList.remove("highlighted", "dimmed");
+        arrow.classList.remove("highlighted", "dimmed");
+        if (flow) {
+          if (hiEdges.has(key)) {
+            path.classList.add("highlighted");
+            arrow.classList.add("highlighted");
+          } else {
+            path.classList.add("dimmed");
+            arrow.classList.add("dimmed");
+          }
+        } else if (neighborSet) {
+          const [a, b] = key.split("→");
+          if (a === focusedNodeId || b === focusedNodeId) {
+            path.classList.add("highlighted");
+            arrow.classList.add("highlighted");
+          } else {
+            path.classList.add("dimmed");
+            arrow.classList.add("dimmed");
+          }
+        }
+      });
+
+      if (flow) renderEdgeNumbers(edgeSeq);
+      else clearEdgeNumbers();
+    }
+
+    function renderFlowDetail(flow) {
+      if (!flow) {
+        flowDetail.classList.add("empty");
+        flowDetail.textContent = "Seleccioná un flujo para ver los pasos y la ruta.";
+        return;
+      }
+      flowDetail.classList.remove("empty");
+      const steps = flow.steps.map((s) => `<li>${s}</li>`).join("");
+      const edgeSeq = pathEdgeSequence(flow.path);
+      const hops = edgeSeq.map((key, i) => {
+        const [a, b] = key.split("→");
+        const from = nodeMap[a]?.label || a;
+        const to = nodeMap[b]?.label || b;
+        return `<span>${i + 1}. ${from} → ${to}</span>`;
+      }).join("");
+      flowDetail.innerHTML = `
+        <h3>${flow.title}</h3>
+        <ol class="steps">${steps}</ol>
+        <div class="path-chips">${hops || flow.path.map((id) => `<span>${nodeMap[id]?.label || id}</span>`).join("")}</div>
+      `;
+    }
+
+    // ── Tooltip ──
+    const tooltip = document.getElementById("tooltip");
+
+    function showTooltip(n, e) {
+      tooltip.innerHTML = `
+        <strong>${n.label}</strong>
+        <div class="tip-file">${n.file}</div>
+        ${n.tip}
+      `;
+      tooltip.classList.add("visible");
+      moveTooltip(e);
+    }
+
+    function moveTooltip(e) {
+      const pad = 14;
+      let x = e.clientX + pad;
+      let y = e.clientY + pad;
+      const rect = tooltip.getBoundingClientRect();
+      if (x + rect.width > window.innerWidth - 8) x = e.clientX - rect.width - pad;
+      if (y + rect.height > window.innerHeight - 8) y = e.clientY - rect.height - pad;
+      tooltip.style.left = x + "px";
+      tooltip.style.top = y + "px";
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("visible");
+    }
+
+    // ── Pan & zoom ──
+    const wrap = document.getElementById("canvasWrap");
+    const inner = document.getElementById("canvasInner");
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function applyTransform() {
+      inner.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+
+    document.getElementById("zoomIn").addEventListener("click", () => {
+      scale = Math.min(1.6, scale + 0.1);
+      applyTransform();
+    });
+    document.getElementById("zoomOut").addEventListener("click", () => {
+      scale = Math.max(0.5, scale - 0.1);
+      applyTransform();
+    });
+    document.getElementById("zoomReset").addEventListener("click", () => {
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      applyTransform();
+    });
+
+    wrap.addEventListener("wheel", (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.08 : 0.08;
+        scale = Math.min(1.6, Math.max(0.5, scale + delta));
+        applyTransform();
+      }
+    }, { passive: false });
+
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.target.closest(".node") || e.target.closest("button")) return;
+      dragging = true;
+      wrap.classList.add("dragging");
+      lastX = e.clientX;
+      lastY = e.clientY;
+      wrap.setPointerCapture(e.pointerId);
+    });
+    wrap.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      panX += e.clientX - lastX;
+      panY += e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      applyTransform();
+    });
+    wrap.addEventListener("pointerup", () => {
+      dragging = false;
+      wrap.classList.remove("dragging");
+    });
+    wrap.addEventListener("pointercancel", () => {
+      dragging = false;
+      wrap.classList.remove("dragging");
+    });
+
+    // Fit on load for smaller screens
+    function fitInitial() {
+      const avail = wrap.clientWidth;
+      if (avail < 1100 && avail > 0) {
+        scale = Math.max(0.55, Math.min(1, (avail - 24) / 1100));
+        applyTransform();
+      }
+    }
+    fitInitial();
+    window.addEventListener("resize", fitInitial);
+  </script>
+</body>
+</html>
