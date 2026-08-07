@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @form-builder/web --filter @form-builder/shared test",
+    "test:web": "pnpm --filter @form-builder/web test",
+    "test:shared": "pnpm --filter @form-builder/shared test"
   },
   "packageManager": "pnpm@10.34.5"
 }
