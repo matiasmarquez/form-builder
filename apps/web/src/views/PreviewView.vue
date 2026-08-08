@@ -75,7 +75,7 @@ watch(
 <template>
   <div>
     <section
-      class="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-20 sm:px-0 sm:pb-10 sm:pt-24"
+      class="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-20 sm:px-0 sm:pb-10 sm:pt-28"
     >
       <EditorToolbar />
 
@@ -85,7 +85,9 @@ watch(
 
       <Alert v-else-if="loadState === 'not-found'" variant="info">
         <p class="font-medium">Formulario no encontrado.</p>
-        <p class="mt-1 text-muted-fg">Es posible que este formulario se haya eliminado.</p>
+        <p class="mt-1 text-muted-fg">
+          Es posible que este formulario se haya eliminado.
+        </p>
       </Alert>
 
       <Alert v-else-if="loadState === 'error'" variant="danger">
