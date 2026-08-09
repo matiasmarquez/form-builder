@@ -184,6 +184,23 @@ function cloneTemplate(template: FormTemplate): FormTemplate {
   return JSON.parse(JSON.stringify(template)) as FormTemplate;
 }
 
+// Drop VisibilityRules the editor UI cannot represent: missing source, or
+// source that no longer precedes the field. Matches FieldVisibilityEditor's
+// forward-only `sourceCandidates` filter — without this, a reorder/delete
+// can leave a still-attached rule whose source <select> renders empty.
+function pruneInvalidVisibilityRules(fields: Field[]): void {
+  const indexById = new Map(fields.map((f, i) => [f.id, i] as const));
+  for (const field of fields) {
+    const rule = field.visibility;
+    if (!rule) continue;
+    const sourceIdx = indexById.get(rule.sourceFieldId);
+    const fieldIdx = indexById.get(field.id)!;
+    if (sourceIdx === undefined || sourceIdx >= fieldIdx) {
+      delete field.visibility;
+    }
+  }
+}
+
 export const useEditorStore = defineStore("editor", {
   state: (): EditorState => ({
     template: null,
@@ -418,6 +435,7 @@ export const useEditorStore = defineStore("editor", {
       this.beginStep(null);
       const [moved] = this.template.fields.splice(from, 1);
       this.template.fields.splice(clamped, 0, moved!);
+      pruneInvalidVisibilityRules(this.template.fields);
       this.template.updatedAt = Date.now();
     },
 
@@ -447,6 +465,7 @@ export const useEditorStore = defineStore("editor", {
       if (same) return;
       this.beginStep(null);
       this.template.fields = reordered;
+      pruneInvalidVisibilityRules(this.template.fields);
       this.template.updatedAt = Date.now();
     },
 
@@ -482,6 +501,7 @@ export const useEditorStore = defineStore("editor", {
       if (idx === -1) return;
       this.beginStep(null);
       this.template.fields.splice(idx, 1);
+      pruneInvalidVisibilityRules(this.template.fields);
       this.template.updatedAt = Date.now();
     },
 

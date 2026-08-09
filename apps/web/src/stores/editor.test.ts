@@ -623,6 +623,106 @@ describe('editor store — moveField (field reordering)', () => {
       expect(store.template!.fields.map((f) => f.id)).toEqual([a, b, c]);
     });
   });
+
+  // Editor UI only offers preceding choice fields as visibility sources. After
+  // a reorder, every remaining VisibilityRule must still point at a source
+  // that precedes the field — otherwise the source <select> renders empty
+  // while the rule data is still attached.
+  describe('visibility rules stay consistent with field order', () => {
+    function seedRadioThenText() {
+      const store = initStore();
+      const sourceId = store.addRadioField()!;
+      const dependentId = store.addTextField()!;
+      const source = store.findField(sourceId)!;
+      if (!isChoiceField(source)) throw new Error('expected radio');
+      store.setFieldVisibility(dependentId, {
+        sourceFieldId: sourceId,
+        condition: { kind: 'equals', optionId: source.options[0]!.id },
+      });
+      return { store, sourceId, dependentId };
+    }
+
+    function sourcePrecedes(
+      store: ReturnType<typeof useEditorStore>,
+      dependentId: string,
+      sourceId: string
+    ): boolean {
+      const ids = store.template!.fields.map((f) => f.id);
+      return ids.indexOf(sourceId) < ids.indexOf(dependentId);
+    }
+
+    it('clears a rule when moveField places the field above its source', () => {
+      const { store, sourceId, dependentId } = seedRadioThenText();
+
+      store.moveField(dependentId, 0);
+
+      const dependent = store.findField(dependentId)!;
+      expect(store.template!.fields.map((f) => f.id)).toEqual([
+        dependentId,
+        sourceId,
+      ]);
+      expect(dependent.visibility).toBeUndefined();
+    });
+
+    it('clears a rule when moveField places the source below the field', () => {
+      const { store, sourceId, dependentId } = seedRadioThenText();
+
+      store.moveField(sourceId, 1);
+
+      const dependent = store.findField(dependentId)!;
+      expect(store.template!.fields.map((f) => f.id)).toEqual([
+        dependentId,
+        sourceId,
+      ]);
+      expect(dependent.visibility).toBeUndefined();
+    });
+
+    it('clears a rule when reorderFields breaks source-before-field order', () => {
+      const { store, sourceId, dependentId } = seedRadioThenText();
+
+      store.reorderFields([dependentId, sourceId]);
+
+      expect(store.findField(dependentId)!.visibility).toBeUndefined();
+    });
+
+    it('keeps a rule when reorder still leaves the source before the field', () => {
+      const store = initStore();
+      const sourceId = store.addRadioField()!;
+      const middleId = store.addTextField()!;
+      const dependentId = store.addTextField()!;
+      const source = store.findField(sourceId)!;
+      if (!isChoiceField(source)) throw new Error('expected radio');
+      store.setFieldVisibility(dependentId, {
+        sourceFieldId: sourceId,
+        condition: { kind: 'equals', optionId: source.options[0]!.id },
+      });
+
+      store.reorderFields([sourceId, dependentId, middleId]);
+
+      const rule = store.findField(dependentId)!.visibility;
+      expect(rule?.sourceFieldId).toBe(sourceId);
+      expect(sourcePrecedes(store, dependentId, sourceId)).toBe(true);
+    });
+
+    it('clears rules that referenced a deleted source field', () => {
+      const { store, sourceId, dependentId } = seedRadioThenText();
+
+      store.deleteField(sourceId);
+
+      expect(store.findField(dependentId)!.visibility).toBeUndefined();
+    });
+
+    it('undo restores a rule cleared by a reorder', () => {
+      const { store, sourceId, dependentId } = seedRadioThenText();
+      const before = store.findField(dependentId)!.visibility;
+
+      store.moveField(dependentId, 0);
+      store.undo();
+
+      expect(store.findField(dependentId)!.visibility).toEqual(before);
+      expect(sourcePrecedes(store, dependentId, sourceId)).toBe(true);
+    });
+  });
 });
 
 describe('editor store — reorderFieldOptions (batch reorder for drag-and-drop gestures)', () => {
