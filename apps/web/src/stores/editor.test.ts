@@ -405,37 +405,6 @@ describe('editor store — option-list mutations', () => {
     expect(store.undoDepth).toBe(depth);
   });
 
-  it('moveFieldOption reorders options and pushes a step', () => {
-    const { store, fieldId } = seedRadio();
-    const b = store.addFieldOption(fieldId)!;
-    const c = store.addFieldOption(fieldId)!;
-    const field = store.findField(fieldId);
-    if (!field || !isChoiceField(field)) throw new Error('bad seed');
-    const a = field.options[0]!.id;
-    const depth = store.undoDepth;
-
-    store.moveFieldOption(fieldId, c, 0);
-
-    expect(store.undoDepth).toBe(depth + 1);
-    const after = store.findField(fieldId);
-    if (after && isChoiceField(after)) {
-      expect(after.options.map((o) => o.id)).toEqual([c, a, b]);
-    }
-  });
-
-  it('moveFieldOption is a no-op when the option ends where it started', () => {
-    const { store, fieldId } = seedRadio();
-    store.addFieldOption(fieldId);
-    const field = store.findField(fieldId);
-    if (!field || !isChoiceField(field)) throw new Error('bad seed');
-    const a = field.options[0]!.id;
-    const depth = store.undoDepth;
-
-    store.moveFieldOption(fieldId, a, 0);
-
-    expect(store.undoDepth).toBe(depth);
-  });
-
   it('option ids survive relabel and reorder', () => {
     const { store, fieldId } = seedRadio();
     const field = store.findField(fieldId);
@@ -445,7 +414,7 @@ describe('editor store — option-list mutations', () => {
     store.setFieldOptionLabel(fieldId, originalId, 'Renamed');
     vi.advanceTimersByTime(600);
     const secondId = store.addFieldOption(fieldId)!;
-    store.moveFieldOption(fieldId, originalId, 1);
+    store.reorderFieldOptions(fieldId, [secondId, originalId]);
 
     const after = store.findField(fieldId);
     if (after && isChoiceField(after)) {
@@ -491,22 +460,6 @@ describe('editor store — option-list mutations', () => {
     }
   });
 
-  it('undo reverts an option reorder', () => {
-    const { store, fieldId } = seedRadio();
-    const b = store.addFieldOption(fieldId)!;
-    const field = store.findField(fieldId);
-    if (!field || !isChoiceField(field)) throw new Error('bad seed');
-    const a = field.options[0]!.id;
-
-    store.moveFieldOption(fieldId, b, 0);
-
-    store.undo();
-    const after = store.findField(fieldId);
-    if (after && isChoiceField(after)) {
-      expect(after.options.map((o) => o.id)).toEqual([a, b]);
-    }
-  });
-
   it('undo of a coalesced option-label edit reverts the whole run', () => {
     const { store, fieldId } = seedRadio();
     const field = store.findField(fieldId);
@@ -525,7 +478,7 @@ describe('editor store — option-list mutations', () => {
   });
 });
 
-describe('editor store — moveField (field reordering)', () => {
+describe('editor store — field reordering', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.useFakeTimers();
@@ -538,51 +491,6 @@ describe('editor store — moveField (field reordering)', () => {
     const c = store.addTextField()!;
     return { store, a, b, c };
   }
-
-  it('reorders fields and pushes exactly one HistoryStep', () => {
-    const { store, a, b, c } = seedThreeFields();
-    const depth = store.undoDepth;
-
-    store.moveField(c, 0);
-
-    expect(store.undoDepth).toBe(depth + 1);
-    expect(store.template!.fields.map((f) => f.id)).toEqual([c, a, b]);
-  });
-
-  it('is a no-op when the field ends where it started (no HistoryStep)', () => {
-    const { store, a } = seedThreeFields();
-    const depth = store.undoDepth;
-
-    store.moveField(a, 0);
-
-    expect(store.undoDepth).toBe(depth);
-  });
-
-  it('clamps the destination index to the last valid position', () => {
-    const { store, a, b, c } = seedThreeFields();
-
-    store.moveField(a, 99);
-
-    expect(store.template!.fields.map((f) => f.id)).toEqual([b, c, a]);
-  });
-
-  it('is a no-op when the field id is unknown (no HistoryStep)', () => {
-    const { store } = seedThreeFields();
-    const depth = store.undoDepth;
-
-    store.moveField('nope', 0);
-
-    expect(store.undoDepth).toBe(depth);
-  });
-
-  it('undo reverts a field reorder', () => {
-    const { store, a, b, c } = seedThreeFields();
-
-    store.moveField(c, 0);
-    store.undo();
-
-    expect(store.template!.fields.map((f) => f.id)).toEqual([a, b, c]);
-  });
 
   describe('reorderFields (batch reorder for drag-and-drop gestures)', () => {
     it('applies the new order and pushes exactly one HistoryStep', () => {
@@ -651,32 +559,6 @@ describe('editor store — moveField (field reordering)', () => {
       return ids.indexOf(sourceId) < ids.indexOf(dependentId);
     }
 
-    it('clears a rule when moveField places the field above its source', () => {
-      const { store, sourceId, dependentId } = seedRadioThenText();
-
-      store.moveField(dependentId, 0);
-
-      const dependent = store.findField(dependentId)!;
-      expect(store.template!.fields.map((f) => f.id)).toEqual([
-        dependentId,
-        sourceId,
-      ]);
-      expect(dependent.visibility).toBeUndefined();
-    });
-
-    it('clears a rule when moveField places the source below the field', () => {
-      const { store, sourceId, dependentId } = seedRadioThenText();
-
-      store.moveField(sourceId, 1);
-
-      const dependent = store.findField(dependentId)!;
-      expect(store.template!.fields.map((f) => f.id)).toEqual([
-        dependentId,
-        sourceId,
-      ]);
-      expect(dependent.visibility).toBeUndefined();
-    });
-
     it('clears a rule when reorderFields breaks source-before-field order', () => {
       const { store, sourceId, dependentId } = seedRadioThenText();
 
@@ -716,7 +598,7 @@ describe('editor store — moveField (field reordering)', () => {
       const { store, sourceId, dependentId } = seedRadioThenText();
       const before = store.findField(dependentId)!.visibility;
 
-      store.moveField(dependentId, 0);
+      store.reorderFields([dependentId, sourceId]);
       store.undo();
 
       expect(store.findField(dependentId)!.visibility).toEqual(before);

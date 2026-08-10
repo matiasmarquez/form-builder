@@ -420,25 +420,6 @@ export const useEditorStore = defineStore("editor", {
       return field.id;
     },
 
-    // Move `fieldId` to index `toIndex` in the template's field list. No-ops
-    // if the field is already there — an ADR-0003 reorder that ends where it
-    // started must not push a HistoryStep.
-    moveField(fieldId: FieldId, toIndex: number): void {
-      if (!this.template) return;
-      const from = this.template.fields.findIndex((f) => f.id === fieldId);
-      if (from === -1) return;
-      const clamped = Math.max(
-        0,
-        Math.min(toIndex, this.template.fields.length - 1)
-      );
-      if (from === clamped) return;
-      this.beginStep(null);
-      const [moved] = this.template.fields.splice(from, 1);
-      this.template.fields.splice(clamped, 0, moved!);
-      pruneInvalidVisibilityRules(this.template.fields);
-      this.template.updatedAt = Date.now();
-    },
-
     // Apply a full reordering of the field list from a drag/keyboard gesture.
     // Accepts the finalised order as an array of field ids and commits exactly
     // one HistoryStep. A no-op (same order or unknown id set) does not push.
@@ -592,26 +573,6 @@ export const useEditorStore = defineStore("editor", {
       if (idx === -1) return;
       this.beginStep(null);
       field.options.splice(idx, 1);
-      this.template!.updatedAt = Date.now();
-    },
-
-    // Move `optionId` to index `toIndex` in the field's option list. No-ops
-    // if the option is already there — matches ticket 03's "reorder that ends
-    // where it started does not push a step" rule for fields.
-    moveFieldOption(
-      fieldId: FieldId,
-      optionId: OptionId,
-      toIndex: number
-    ): void {
-      const field = this.findField(fieldId);
-      if (!field || !isChoiceField(field)) return;
-      const from = field.options.findIndex((o) => o.id === optionId);
-      if (from === -1) return;
-      const clamped = Math.max(0, Math.min(toIndex, field.options.length - 1));
-      if (from === clamped) return;
-      this.beginStep(null);
-      const [moved] = field.options.splice(from, 1);
-      field.options.splice(clamped, 0, moved!);
       this.template!.updatedAt = Date.now();
     },
 
